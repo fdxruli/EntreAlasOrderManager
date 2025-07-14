@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Pedidos - ENTRE ALAS</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="icon" type="image/png" href="imagen-icono/safeimagekit-logo-entrealas-sep24-2-01_051032.png">
+</head>
+
+<body>
+    <div class="app-container">
+        <header>
+            <h1>Administrador de Pedidos</h1>
+            <div class="admin-actions">
+                <button id="btn-nuevo-pedido">🆕 Nuevo Pedido</button>
+                <button id="btn-editar-pedido">✏️ Editar Pedido</button>
+                <button id="btn-descuentos">🎫 Descuentos</button>
+                <button id="btn-dashboard">📊 Dashboard</button>
+                <button id="btn-crear-combo">🍱 Crear Combo</button>
+                <button id="btn-exportar">📤 Exportar</button>
+                <label for="input-importar" class="btn-importar">📥 Importar</label>
+                <input type="file" id="input-importar" accept=".json" style="display: none;">
+            </div>
+        </header>
+
+        <div class="main-content">
+            <!-- Panel de categorías -->
+            <div class="categorias-panel">
+                <h2>Categorías</h2>
+                <div class="categorias-list">
+                    <button class="categoria-btn active" data-categoria="alitas">Alitas</button>
+                    <button class="categoria-btn" data-categoria="boneless">Boneless</button>
+                    <button class="categoria-btn" data-categoria="papas">Papas Fritas</button>
+                    <button class="categoria-btn" data-categoria="bebidas">Bebidas</button>
+                    <button class="categoria-btn" data-categoria="extras">Extras</button>
+                    <button class="categoria-btn especial-btn" data-categoria="especial">Pedido Especial</button>
+                    <button class="categoria-btn" data-categoria="combos">Combos</button>
+                </div>
+            </div>
+
+            <!-- Panel de productos -->
+            <div class="productos-panel">
+                <h2 id="categoria-actual">Alitas</h2>
+                <div class="productos-list" id="productos-container">
+                    <!-- Productos se cargarán aquí dinámicamente -->
+                </div>
+            </div>
+
+            <!-- Panel del pedido -->
+            <div class="pedido-panel">
+                <h2>Resumen del Pedido</h2>
+                <div class="codigo-pedido">Pedido: <span id="pedido-codigo">EA-0624-01</span></div>
+                <div class="pedido-items" id="pedido-items">
+                    <div class="empty-state">No hay productos agregados</div>
+                </div>
+
+                <div class="pedido-notas">
+                    <label for="pedido-notas-input">Notas del pedido:</label>
+                    <textarea id="pedido-notas-input" placeholder="Ej: Sin picante, para llevar, etc."></textarea>
+                </div>
+
+                <div class="pedido-totales">
+                    <div class="subtotal">
+                        <span>Subtotal:</span>
+                        <span id="subtotal">$0.00</span>
+                    </div>
+                    <div class="descuento">
+                        <input type="text" id="codigo-descuento" placeholder="Código descuento">
+                        <button id="aplicar-descuento">Aplicar</button>
+                        <span id="descuento-aplicado"></span>
+                    </div>
+
+                    <!-- Botones de costo de envío -->
+                    <div class="envio">
+                        <span>Costo de envío:</span>
+                        <button class="btn-envio active" data-monto="0">Gratis</button>
+                        <button class="btn-envio" data-monto="5">$5</button>
+                        <button class="btn-envio" data-monto="10">$10</button>
+                        <button class="btn-envio" data-monto="20">$20</button>
+                        <span id="envio-monto">$0.00</span>
+                    </div>
+
+                    <div class="total">
+                        <span>Total:</span>
+                        <span id="total">$0.00</span>
+                    </div>
+                </div>
+
+                <div class="pedido-acciones">
+                    <!-- Cambia esto en tu pedido-acciones -->
+                    <button id="reiniciar-pedido">🔄 Reiniciar Pedido</button>
+                    <button id="vista-previa-btn">👁️ Vista Previa</button>
+                    <button id="enviar-whatsapp">📤 Enviar por WhatsApp</button>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Modales -->
+        <div class="modal" id="vista-previa-modal">
+            <div class="modal-content">
+                <span class="close-modal">&times;</span>
+                <h2>Vista Previa del Pedido</h2>
+                <div class="vista-previa-content" id="vista-previa-content"></div>
+                <div class="modal-actions">
+                    <button id="editar-pedido">✏️ Editar Pedido</button>
+                    <button id="confirmar-envio">📤 Enviar a WhatsApp</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal" id="pedido-especial-modal">
+            <div class="modal-content">
+                <span class="close-modal">&times;</span>
+                <h2>Crear Pedido Especial</h2>
+                <div class="especial-form" id="especial-form"></div>
+            </div>
+        </div>
+
+        <div class="modal" id="admin-descuentos-modal">
+            <div class="modal-content">
+                <span class="close-modal">&times;</span>
+                <h2>Administrar Códigos de Descuento</h2>
+                <div class="crear-descuento">
+                    <h3>Crear Nuevo Código</h3>
+                    <div class="form-group">
+                        <label>Código:</label>
+                        <input type="text" id="nuevo-codigo" placeholder="EJ: VERANO20">
+                    </div>
+                    <div class="form-group">
+                        <label>Tipo:</label>
+                        <select id="tipo-descuento">
+                            <option value="porcentaje">Porcentaje</option>
+                            <option value="monto">Monto Fijo</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Aplicar a categorías:</label>
+                        <select id="categorias-descuento" multiple>
+                            <option value="alitas">Alitas</option>
+                            <option value="boneless">Boneless</option>
+                            <option value="papas">Papas</option>
+                            <option value="bebidas">Bebidas</option>
+                            <option value="extras">Extras</option>
+                        </select>
+                        <small>Selecciona categorías específicas o deja vacío para aplicar a todos</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Valor:</label>
+                        <input type="number" id="valor-descuento" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Válido hasta:</label>
+                        <input type="date" id="valido-hasta">
+                    </div>
+                    <div class="form-group">
+                        <label>Límite de usos:</label>
+                        <input type="number" id="limite-usos" min="1" placeholder="Ilimitado">
+                    </div>
+                    <!-- Sección de botones en el formulario de descuentos -->
+                    <div class="formulario-botones">
+                        <button type="button" id="btn-crear-descuento" class="btn-primary">
+                            Crear Descuento
+                        </button>
+                        <button type="button" id="btn-cancelar-edicion" class="btn-secondary">
+                            Cancelar Edición
+                        </button>
+                    </div>
+                </div>
+                <!-- Tabla actualizada con botón WhatsApp -->
+                <div class="lista-descuentos">
+                    <h3>Códigos Activos</h3>
+                    <!-- Filtro de ordenamiento -->
+                    <div class="filtro-contenedor">
+                        <label for="filtro-orden">Ordenar por:</label>
+                        <select id="filtro-orden">
+                            <option value="recientes">Más recientes primero</option>
+                            <option value="antiguos">Más antiguos primero</option>
+                            <option value="codigo-asc">Ordenar A-Z</option>
+                            <option value="codigo-desc">Ordenar Z-A</option>
+                            <option value="vencimiento">Proximo a vencer</option>
+                            <option value="usos">Por cantidad de usos</option>
+                        </select>
+                        <span id="contador-descuentos" class="contador"></span>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Tipo</th>
+                                <th>Valor</th>
+                                <th>Válido hasta</th>
+                                <th>Usos</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-descuentos"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal" id="dashboard-modal">
+            <div class="modal-content dashboard-container">
+                <span class="close-modal">&times;</span>
+                <h2><i class="fas fa-chart-line"></i> Dashboard de Ventas</h2>
+
+                <!-- SECCIÓN 1: FILTROS -->
+                <div class="filtros-dashboard card">
+                    <h3><i class="fas fa-filter"></i> Filtros</h3>
+                    <div class="filtros-grid">
+                        <div class="filtro-item">
+                            <label for="filtro-fecha-desde"><i class="far fa-calendar-alt"></i> Desde:</label>
+                            <input type="date" id="filtro-fecha-desde" class="form-control">
+                        </div>
+                        <div class="filtro-item">
+                            <label for="filtro-fecha-hasta"><i class="far fa-calendar-alt"></i> Hasta:</label>
+                            <input type="date" id="filtro-fecha-hasta" class="form-control">
+                        </div>
+                        <div class="filtro-item">
+                            <label for="filtro-top-productos">Mostrar:</label>
+                            <select id="filtro-top-productos" class="form-control">
+                                <option value="5">Top 5</option>
+                                <option value="10" selected>Top 10</option>
+                                <option value="15">Top 15</option>
+                            </select>
+                        </div>
+                        <div class="filtro-item">
+                            <button id="btn-aplicar-filtros" class="btn btn-primary">
+                                <i class="fas fa-check"></i> Aplicar Filtros
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 2: MÉTRICAS PRINCIPALES -->
+                <div class="metricas-principales">
+                    <h3><i class="fas fa-tachometer-alt"></i> Métricas Principales</h3>
+                    <div class="cards-grid">
+                        <!-- 1. Ventas Totales (lo más importante) -->
+                        <div class="metric-card card highlight">
+                            <div class="metric-header">
+                                <h4><i class="fas fa-dollar-sign"></i> Ventas Totales</h4>
+                            </div>
+                            <div class="metric-value" id="total-ventas">$0.00</div>
+                            <div class="metric-footer">Incluye productos y envíos</div>
+                        </div>
+
+                        <!-- 2. Utilidad Neta (segundo más importante) -->
+                        <div class="metric-card card highlight">
+                            <div class="metric-header">
+                                <h4><i class="fas fa-calculator"></i> Utilidad Neta</h4>
+                            </div>
+                            <div class="metric-value" id="utilidad-neta">$0.00</div>
+                            <div class="metric-footer">Ganancias - Gastos</div>
+                        </div>
+
+                        <!-- 3. Ganancias -->
+                        <div class="metric-card card">
+                            <div class="metric-header">
+                                <h4><i class="fas fa-chart-line"></i> Ganancias</h4>
+                            </div>
+                            <div class="metric-value" id="total-ganancias">$0.00</div>
+                            <div class="metric-footer">Antes de gastos</div>
+                        </div>
+
+                        <!-- 4. Costos -->
+                        <div class="metric-card card">
+                            <div class="metric-header">
+                                <h4><i class="fas fa-money-bill-wave"></i> Costos</h4>
+                            </div>
+                            <div class="metric-value" id="total-costos">$0.00</div>
+                            <div class="metric-footer">Costos de productos</div>
+                        </div>
+
+                        <!-- 5. Gastos -->
+                        <div class="metric-card card">
+                            <div class="metric-header">
+                                <h4><i class="fas fa-credit-card"></i> Gastos</h4>
+                            </div>
+                            <div class="metric-value" id="total-gastos">$0.00</div>
+                            <div class="metric-footer">Operativos</div>
+                        </div>
+
+                        <!-- 6. Envíos -->
+                        <div class="metric-card card">
+                            <div class="metric-header">
+                                <h4><i class="fas fa-truck"></i> Envíos</h4>
+                            </div>
+                            <div id="total-envios" class="metric-value">$0.00</div>
+                            <div class="metric-footer">Ventas: <span id="ganancias-envios"></span></div>
+                        </div>
+
+                        <!-- 7. Margen -->
+                        <div class="metric-card card">
+                            <div class="metric-header">
+                                <h4><i class="fas fa-percentage"></i> Margen</h4>
+                            </div>
+                            <div class="metric-value" id="margen-ganancias">0.0%</div>
+                            <div class="metric-footer">Margen de ganancia</div>
+                        </div>
+
+                        <!-- 8. Pedidos -->
+                        <div class="metric-card card">
+                            <div class="metric-header">
+                                <h4><i class="fas fa-shopping-cart"></i> Pedidos</h4>
+                            </div>
+                            <div class="metric-value" id="total-pedidos">0</div>
+                            <div class="metric-footer">Realizados</div>
+                        </div>
+
+                        <!-- 9. Ticket Promedio -->
+                        <div class="metric-card card">
+                            <div class="metric-header">
+                                <h4><i class="fas fa-receipt"></i> Ticket Promedio</h4>
+                            </div>
+                            <div class="metric-value" id="ticket-promedio">$0.00</div>
+                            <div class="metric-footer">Promedio por venta</div>
+                        </div>
+
+                        <!-- 10. Descuentos -->
+                        <div class="metric-card card">
+                            <div class="metric-header">
+                                <h4><i class="fas fa-tag"></i> Descuentos</h4>
+                            </div>
+                            <div class="metric-value" id="total-descuentos">$0.00</div>
+                            <div class="metric-footer">Total aplicado</div>
+                        </div>
+
+                        <!-- 11. Productos Vendidos -->
+                        <div class="metric-card card">
+                            <div class="metric-header">
+                                <h4><i class="fas fa-boxes"></i> Productos</h4>
+                            </div>
+                            <div class="metric-value" id="total-productos-vendidos">0</div>
+                            <div class="metric-footer">Vendidos</div>
+                        </div>
+
+                        <!-- Acción: Enviar Resumen -->
+                        <button id="btn-enviar-resumen-detallado" class="btn btn-success">
+                            <i class="fas fa-share-alt"></i> Enviar Resumen Detallado
+                        </button>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 3: METAS Y OBJETIVOS -->
+                <div class="metas-objetivos">
+                    <h3><i class="fas fa-bullseye"></i> Metas y Objetivos</h3>
+                    <div class="metas-container">
+                        <!-- Selector de Meta -->
+                        <div class="card" style="width: 200px;">
+                            <select id="filtro-tipo-meta" class="form-control">
+                                <option value="mensual">Meta Mensual</option>
+                                <option value="semanal">Meta Semanal</option>
+                            </select>
+                        </div>
+
+                        <!-- Meta Mensual -->
+                        <div id="meta-mensual-container" class="card objetivo-meta">
+                            <h4><i class="fas fa-calendar-alt"></i> Meta Mensual</h4>
+
+                            <div class="meta-details">
+                                <div class="meta-row">
+                                    <span class="meta-label">Ventas brutas:</span>
+                                    <span id="ventas-brutas-mes" class="meta-value">$0.00</span>
+                                </div>
+                                <div class="meta-row">
+                                    <span class="meta-label">Gastos:</span>
+                                    <span id="gastos-mes" class="meta-value negative">$0.00</span>
+                                </div>
+                                <div class="meta-row highlight">
+                                    <span class="meta-label">Ventas netas:</span>
+                                    <span id="ventas-netas-mes" class="meta-value positive">$0.00</span>
+                                </div>
+                                <div class="meta-row">
+                                    <span class="meta-label">Meta:</span>
+                                    <span id="meta-mensual" class="meta-value">$30,000.00</span>
+                                </div>
+                            </div>
+
+                            <div class="progress-container">
+                                <div class="progress-labels">
+                                    <span>0%</span>
+                                    <span>Progreso (neto)</span>
+                                    <span>100%</span>
+                                </div>
+                                <div class="progress-bar-container">
+                                    <div id="barra-progreso" class="progress-bar bg-danger" style="width: 0%;">
+                                        <span class="progress-text">0%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Meta Semanal -->
+                        <div id="meta-semanal-container" class="card objetivo-meta hidden">
+                            <h4><i class="fas fa-calendar-week"></i> Meta Semanal</h4>
+
+                            <div class="meta-details">
+                                <div class="meta-row">
+                                    <span class="meta-label">Ventas brutas:</span>
+                                    <span id="ventas-brutas-semana" class="meta-value">$0.00</span>
+                                </div>
+                                <div class="meta-row">
+                                    <span class="meta-label">Gastos:</span>
+                                    <span id="gastos-semana" class="meta-value negative">$0.00</span>
+                                </div>
+                                <div class="meta-row highlight">
+                                    <span class="meta-label">Ventas netas:</span>
+                                    <span id="ventas-netas-semana" class="meta-value positive">$0.00</span>
+                                </div>
+                                <div class="meta-row">
+                                    <span class="meta-label">Meta:</span>
+                                    <span id="meta-semanal" class="meta-value">$7,500.00</span>
+                                </div>
+                            </div>
+
+                            <div class="progress-container">
+                                <div class="progress-labels">
+                                    <span>0%</span>
+                                    <span>Progreso (neto)</span>
+                                    <span>100%</span>
+                                </div>
+                                <div class="progress-bar-container">
+                                    <div id="barra-progreso-semanal" class="progress-bar bg-danger" style="width: 0%;">
+                                        <span class="progress-text">0%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 4: CONTROL DE GASTOS -->
+                <div class="gastos-section">
+                    <h3><i class="fas fa-money-bill-wave"></i> Control de Gastos</h3>
+
+                    <!-- Formulario de Gastos -->
+                    <div class="card">
+                        <h4><i class="fas fa-plus-circle"></i> Agregar Gasto</h4>
+                        <form id="formulario-gasto">
+                            <div class="form-row">
+                                <div>
+                                    <label for="fecha-gasto">Fecha</label>
+                                    <input type="date" id="fecha-gasto" class="form-control" required>
+                                </div>
+                                <div>
+                                    <label for="monto-gasto">Monto</label>
+                                    <input type="number" id="monto-gasto" class="form-control" step="0.01" min="0"
+                                        required>
+                                </div>
+                                <div>
+                                    <label for="tipo-gasto">Tipo</label>
+                                    <select id="tipo-gasto" class="form-control" required>
+                                        <option value="">Seleccionar...</option>
+                                        <option value="Sueldos">Sueldos</option>
+                                        <option value="Renta">Renta</option>
+                                        <option value="Servicios">Servicios</option>
+                                        <option value="Insumos">Insumos</option>
+                                        <option value="Mantenimiento">Mantenimiento</option>
+                                        <option value="Publicidad">Publicidad</option>
+                                        <option value="Impuestos">Impuestos</option>
+                                        <option value="Otros">Otros</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="descripcion-gasto">Descripción</label>
+                                    <input type="text" id="descripcion-gasto" class="form-control">
+                                </div>
+                                <div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-plus"></i> Agregar
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Distribución de Gastos -->
+                    <div class="card">
+                        <h4><i class="fas fa-chart-pie"></i> Distribución de Gastos</h4>
+                        <div class="chart-container">
+                            <canvas id="grafico-gastos"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Tabla de Gastos -->
+                    <div class="card">
+                        <h4><i class="fas fa-list"></i> Historial de Gastos</h4>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-header">
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Tipo</th>
+                                        <th class="text-right">Monto</th>
+                                        <th>Descripción</th>
+                                        <th>Registro</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-gastos"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 5: GRÁFICOS DE VENTAS -->
+                <div class="graficos-ventas">
+                    <h3><i class="fas fa-chart-bar"></i> Análisis de Ventas</h3>
+
+                    <!-- Tendencia de Ventas -->
+                    <div class="card">
+                        <div class="section-header">
+                            <h4><i class="fas fa-chart-line"></i> Tendencia de Ventas</h4>
+                            <button class="btn btn-sm btn-outline" id="btn-cambiar-grafico">
+                                <i class="fas fa-exchange-alt"></i> Cambiar Vista
+                            </button>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="ventas-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 6: PRODUCTOS MÁS VENDIDOS -->
+                <div class="productos-vendidos">
+                    <h3><i class="fas fa-star"></i> Productos Más Vendidos</h3>
+
+                    <!-- Gráfico de Productos -->
+                    <div class="card">
+                        <div class="section-header">
+                            <h4><i class="fas fa-chart-pie"></i> Distribución por Productos</h4>
+                            <span class="badge" id="total-productos-vendidos">0 productos</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="chart-pie-productos"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Tabla de Productos -->
+                    <div class="card">
+                        <h4><i class="fas fa-table"></i> Detalles de Productos</h4>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-header">
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th class="text-right">Cantidad</th>
+                                        <th class="text-right">Ventas</th>
+                                        <th class="text-right">Costos</th>
+                                        <th class="text-right">Ganancias</th>
+                                        <th class="text-right">Margen</th>
+                                        <th class="text-right">% Ventas</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-productos-costos"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="modal" id="buscar-pedido-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <span class="close-modal">&times;</span>
+                    <h2>Editar o Cancelar Pedido</h2>
+                </div>
+                <div class="modal-body">
+                    <p>Ingresa el código del pedido que deseas modificar o cancelar:</p>
+
+                    <div class="busqueda-form">
+                        <input type="text" id="input-codigo-pedido" placeholder="Ej: EA-0624-15">
+                        <button id="btn-buscar-pedido">Buscar</button>
+                    </div>
+
+                    <div id="resultado-busqueda" class="hidden"></div>
+
+                    <div id="pin-verificacion" class="pin-verificacion hidden">
+                        <p>Este pedido es antiguo. Ingresa el PIN de administrador:</p>
+                        <input type="password" id="input-pin" placeholder="PIN de 4 dígitos">
+                        <button id="btn-verificar-pin">Verificar</button>
+                        <p id="pin-error" class="error-message"></p>
+                    </div>
+
+                    <div class="recientes" id="pedidos-recientes">
+                        <h3>Pedidos Recientes</h3>
+                        <ul id="lista-recientes"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para crear combos -->
+        <div class="modal" id="combo-modal">
+            <div class="modal-content combo-modal-content">
+                <span class="close-modal close-combo-modal">×</span>
+                <h2>Gestión de Combos</h2>
+                <div class="combo-list-section">
+                    <h3>Combos Creados</h3>
+                    <div id="combo-list-container"></div>
+                </div>
+                <div class="combo-form" id="combo-form">
+                    <div class="form-group">
+                        <label for="combo-name">Nombre del Combo:</label>
+                        <input type="text" id="combo-name" placeholder="Ej: Combo Familiar, Combo Pareja, etc.">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="combo-start-date">Fecha de inicio:</label>
+                            <input type="date" id="combo-start-date">
+                        </div>
+                        <div class="form-group">
+                            <label for="combo-end-date">Fecha de fin (opcional):</label>
+                            <input type="date" id="combo-end-date">
+                        </div>
+                    </div>
+                    <h3>Items del Combo</h3>
+                    <div class="combo-items-container" id="combo-items-container"></div>
+                    <button type="button" class="btn-add-item" id="add-combo-item">
+                        + Agregar Item
+                    </button>
+                    <div class="combo-preview" id="combo-preview">
+                        <p>No hay items agregados al combo</p>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="combo-profit-margin">% de Margen de Ganancia:</label>
+                            <input type="number" id="combo-profit-margin" min="0" value="30">
+                        </div>
+                        <div class="form-group">
+                            <label for="combo-price">Precio Final:</label>
+                            <input type="number" id="combo-price" readonly>
+                            <div id="combo-savings" class="combo-savings"></div>
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" id="reset-combo">
+                            Reiniciar
+                        </button>
+                        <button type="button" class="btn btn-primary" id="save-combo">
+                            Guardar Combo
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    </div>
+    <!-- Scripts -->
+    <script src="js/pedidos.js"></script>
+    <script src="js/combo.js"></script>
+    <script src="js/descuentos.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/whatsapp.js"></script>
+    <script src="css/app.js"></script>
+</body>
+
+</html>

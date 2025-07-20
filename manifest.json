@@ -1,18 +1,18 @@
 {
   "name": "Entre Alas Admin",
   "short_name": "Entre Alas",
-  "start_url": "/index.html",
+  "start_url": "/EntreAlasOrderManager/index.html",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#000000",
   "icons": [
     {
-      "src": "/imagen-icono/safeimagekit-logo-entrealas-sep24-2-01_051032.png",
+      "src": "/EntreAlasOrderManager/imagen-icono/safeimagekit-logo-entrealas-sep24-2-01_051032.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/imagen-icono/safeimagekit-logo-entrealas-sep24-2-01_051032.png",
+      "src": "/EntreAlasOrderManager/imagen-icono/safeimagekit-logo-entrealas-sep24-2-01_051032.png",
       "sizes": "512x512",
       "type": "image/png"
     }

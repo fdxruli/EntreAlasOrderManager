@@ -2,17 +2,17 @@
 const CACHE_NAME = 'entrealas-app-v1';
 const urlsToCache = [
   '/', // Página principal
-  '/index.html',
-  '/css/styles.css',
-  '/libs/chart.js', // Asegúrate de tener Chart.js localmente
-  '/js/pedidos.js',
-  '/js/combo.js',
-  '/js/descuentos.js',
-  '/js/dashboard.js',
-  '/js/storage.js',
-  '/js/whatsapp.js',
-  '/js/app.js',
-  '/imagen-icono/safeimagekit-logo-entrealas-sep24-2-01_051032.png'
+  '/EntreAlasOrderManager/index.html',
+  '/EntreAlasOrderManager/css/styles.css',
+  '/EntreAlasOrderManager/libs/chart.js', // Asegúrate de tener Chart.js localmente
+  '/EntreAlasOrderManager/js/pedidos.js',
+  '/EntreAlasOrderManager/js/combo.js',
+  '/EntreAlasOrderManager/js/descuentos.js',
+  '/EntreAlasOrderManager/js/dashboard.js',
+  '/EntreAlasOrderManager/js/storage.js',
+  '/EntreAlasOrderManager/js/whatsapp.js',
+  '/EntreAlasOrderManager/js/app.js',
+  '/EntreAlasOrderManager/imagen-icono/safeimagekit-logo-entrealas-sep24-2-01_051032.png'
 ];
 
 // Evento de instalación: cachear los archivos

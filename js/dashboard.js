@@ -7,8 +7,14 @@ let metaEventListenerAdded = false;
 
 // Agregar al inicio del archivo JS, después de las otras constantes
 const GASTOS_TIPOS = [
-    'Sueldos', 'Renta', 'Servicios', 'Insumos', 'Mantenimiento',
-    'Publicidad', 'Impuestos', 'Otros'
+    { nombre: 'Sueldos', categoria: 'externo' },
+    { nombre: 'Renta', categoria: 'externo' },
+    { nombre: 'Servicios', categoria: 'externo' },
+    { nombre: 'Insumos', categoria: 'inventario' }, // Inventory-related
+    { nombre: 'Mantenimiento', categoria: 'externo' },
+    { nombre: 'Publicidad', categoria: 'externo' },
+    { nombre: 'Impuestos', categoria: 'externo' },
+    { nombre: 'Otros', categoria: 'externo' }
 ];
 
 const GASTOS_IDS = {
@@ -33,18 +39,20 @@ const COSTOS_PRODUCTOS = {
 
 const METAS_CONFIG = {
     mensual: {
-        meta: 6000,
+        metaVentas: 6000,       // Meta de ventas brutas
+        metaGanancias: 3000,    // Meta de ganancias netas (50% de las ventas como ejemplo)
         label: 'Mensual',
-        colorCompleto: '#4CAF50',  // Verde
-        colorProgreso: '#8BC34A',   // Verde claro
-        colorFaltante: '#FF5722'    // Rojo
+        colorCompleto: '#4CAF50',
+        colorProgreso: '#8BC34A',
+        colorFaltante: '#FF5722'
     },
     semanal: {
-        meta: 1500,
+        metaVentas: 1500,       // Meta de ventas brutas
+        metaGanancias: 750,      // Meta de ganancias netas
         label: 'Semanal',
-        colorCompleto: '#2196F3',   // Azul
-        colorProgreso: '#64B5F6',   // Azul claro
-        colorFaltante: '#FF9800'    // Naranja
+        colorCompleto: '#2196F3',
+        colorProgreso: '#64B5F6',
+        colorFaltante: '#FF9800'
     }
 };
 
@@ -54,7 +62,8 @@ const COSTOS_IDS = {
     TOTAL_GANANCIAS: 'total-ganancias',
     MARGEN_GANANCIAS: 'margen-ganancias',
     TABLA_PRODUCTOS_COSTOS: 'tabla-productos-costos',
-    UTILIDAD_NETA: 'utilidad-neta'
+    UTILIDAD_NETA: 'utilidad-neta',
+    DINERO_CAJA: 'dinero-caja' // Nueva métrica
 };
 
 // Función para obtener el costo de un producto
@@ -72,7 +81,7 @@ function obtenerCostoProducto(nombreProducto) {
     return { costo: 0, precio: 0 };
 }
 
-// Función CORREGIDA para actualizar el dashboard principal
+// Función MODIFICADA para actualizar el dashboard principal
 function actualizarDashboard() {
     const desde = obtenerElemento(IDS.FILTRO_DESDE)?.value;
     const hasta = obtenerElemento(IDS.FILTRO_HASTA)?.value;
@@ -108,8 +117,17 @@ function actualizarDashboard() {
         gananciasEnvios
     } = calcularProductosConCostos(pedidosFiltrados, topLimit);
 
-    const totalGastos = actualizarResumenGastos();
-    const utilidadNeta = totalGanancias - totalGastos;
+    const { totalGastosExternos, totalGastosInventario } = actualizarResumenGastos();
+    
+    // NUEVA LÓGICA: Calcular utilidad neta considerando gastos de inventario
+    let utilidadNeta = totalGanancias - totalGastosExternos;
+    let excesoInventario = 0;
+    if (totalGastosInventario > totalCostos) {
+        excesoInventario = totalGastosInventario - totalCostos;
+        utilidadNeta -= excesoInventario; // Restar solo el exceso de inventario
+    }
+    // Dinero en caja sigue igual: total ventas menos todos los gastos
+    const dineroCaja = totalVentas - totalGastosExternos - totalGastosInventario;
 
     actualizarElementosUIConCostos(
         totalVentas,
@@ -120,10 +138,13 @@ function actualizarDashboard() {
         totalCostos,
         totalGanancias,
         margenGananciasGeneral,
-        totalGastos,
+        totalGastosExternos,
         utilidadNeta,
         totalEnvios,
-        gananciasEnvios
+        gananciasEnvios,
+        totalGastosInventario,
+        dineroCaja,
+        excesoInventario // Nueva métrica para mostrar el exceso
     );
 
     actualizarTablaProductos(topProductos, totalVentas);
@@ -132,6 +153,7 @@ function actualizarDashboard() {
     recalcularMetaDesdeCero();
 }
 
+// Función MODIFICADA para actualizar elementos UI
 function actualizarElementosUIConCostos(
     totalVentas, 
     totalPedidos, 
@@ -141,12 +163,14 @@ function actualizarElementosUIConCostos(
     totalCostos,
     totalGanancias,
     margenGanancias,
-    totalGastos,
+    totalGastosExternos,
     utilidadNeta,
     totalEnvios = 0,
-    gananciasEnvios = 0
+    gananciasEnvios = 0,
+    totalGastosInventario = 0,
+    dineroCaja = 0,
+    excesoInventario = 0 // Nueva métrica
 ) {
-    // Asegurar que todos los valores sean números válidos
     totalVentas = asegurarNumero(totalVentas);
     totalPedidos = asegurarNumero(totalPedidos);
     ticketPromedio = asegurarNumero(ticketPromedio);
@@ -155,12 +179,14 @@ function actualizarElementosUIConCostos(
     totalCostos = asegurarNumero(totalCostos);
     totalGanancias = asegurarNumero(totalGanancias);
     margenGanancias = asegurarNumero(margenGanancias);
-    totalGastos = asegurarNumero(totalGastos);
+    totalGastosExternos = asegurarNumero(totalGastosExternos);
     utilidadNeta = asegurarNumero(utilidadNeta);
     totalEnvios = asegurarNumero(totalEnvios);
     gananciasEnvios = asegurarNumero(gananciasEnvios);
+    totalGastosInventario = asegurarNumero(totalGastosInventario);
+    dineroCaja = asegurarNumero(dineroCaja);
+    excesoInventario = asegurarNumero(excesoInventario);
 
-    // Actualizar elementos del DOM directamente
     const ventasElement = document.getElementById('total-ventas');
     if (ventasElement) ventasElement.textContent = formatearMoneda(totalVentas);
 
@@ -185,8 +211,11 @@ function actualizarElementosUIConCostos(
     const margenElement = document.getElementById('margen-ganancias');
     if (margenElement) margenElement.textContent = `${margenGanancias.toFixed(1)}%`;
 
-    const gastosElement = document.getElementById('total-gastos');
-    if (gastosElement) gastosElement.textContent = formatearMoneda(totalGastos);
+    const gastosExternosElement = document.getElementById('total-gastos-externos');
+    if (gastosExternosElement) gastosExternosElement.textContent = formatearMoneda(totalGastosExternos);
+
+    const gastosInventarioElement = document.getElementById('total-gastos-inventario');
+    if (gastosInventarioElement) gastosInventarioElement.textContent = formatearMoneda(totalGastosInventario);
 
     const utilidadElement = document.getElementById('utilidad-neta');
     if (utilidadElement) {
@@ -194,18 +223,31 @@ function actualizarElementosUIConCostos(
         utilidadElement.className = utilidadNeta >= 0 ? 'metric-value positive' : 'metric-value negative';
     }
 
-    // Actualizar elementos de envíos si existen
     const enviosElement = document.getElementById('total-envios');
     if (enviosElement) enviosElement.textContent = formatearMoneda(totalEnvios);
 
     const gananciasEnviosElement = document.getElementById('ganancias-envios');
     if (gananciasEnviosElement) gananciasEnviosElement.textContent = formatearMoneda(gananciasEnvios);
+
+    const dineroCajaElement = document.getElementById('dinero-caja');
+    if (dineroCajaElement) {
+        dineroCajaElement.textContent = formatearMoneda(dineroCaja);
+        dineroCajaElement.className = dineroCaja >= 0 ? 'metric-value positive' : 'metric-value negative';
+    }
+
+    // NUEVO: Mostrar exceso de inventario si existe
+    const excesoInventarioElement = document.getElementById('exceso-inventario');
+    if (excesoInventarioElement) {
+        excesoInventarioElement.textContent = formatearMoneda(excesoInventario);
+        excesoInventarioElement.className = excesoInventario > 0 ? 'metric-value negative' : 'metric-value';
+    }
 }
 
-// Función para obtener gastos desde localStorage
 function obtenerGastos() {
     try {
-        return JSON.parse(localStorage.getItem('gastos')) || [];
+        const gastos = JSON.parse(localStorage.getItem('gastos')) || [];
+        console.log('Gastos cargados:', gastos); // Debug log
+        return gastos;
     } catch (error) {
         console.error('Error al leer gastos desde localStorage:', error);
         mostrarNotificacion('Error al cargar los datos de gastos', 'error');
@@ -213,10 +255,10 @@ function obtenerGastos() {
     }
 }
 
-// Función para guardar gastos en localStorage
 function guardarGastos(gastos) {
     try {
         localStorage.setItem('gastos', JSON.stringify(gastos));
+        console.log('Gastos guardados:', gastos); // Debug log
     } catch (error) {
         console.error('Error al guardar gastos en localStorage:', error);
         mostrarNotificacion('Error al guardar los datos de gastos', 'error');
@@ -227,13 +269,34 @@ function guardarGastos(gastos) {
 function agregarGasto(event) {
     event.preventDefault();
 
+    console.log('Iniciando agregarGasto'); // Debug log
+
     const fecha = obtenerElemento(GASTOS_IDS.FECHA_GASTO)?.value;
     const monto = parseFloat(obtenerElemento(GASTOS_IDS.MONTO_GASTO)?.value);
     const tipo = obtenerElemento(GASTOS_IDS.TIPO_GASTO)?.value;
     const descripcion = obtenerElemento(GASTOS_IDS.DESCRIPCION_GASTO)?.value;
 
-    if (!fecha || isNaN(monto) || !tipo) {
-        mostrarNotificacion('Por favor completa todos los campos obligatorios', 'warning');
+    // Validate inputs
+    if (!fecha) {
+        mostrarNotificacion('Por favor selecciona una fecha válida', 'warning');
+        console.error('Fecha no válida:', fecha);
+        return;
+    }
+    if (isNaN(monto) || monto <= 0) {
+        mostrarNotificacion('Por favor ingresa un monto válido mayor a 0', 'warning');
+        console.error('Monto no válido:', monto);
+        return;
+    }
+    if (!tipo) {
+        mostrarNotificacion('Por favor selecciona un tipo de gasto', 'warning');
+        console.error('Tipo no seleccionado:', tipo);
+        return;
+    }
+
+    const tipoConfig = GASTOS_TIPOS.find(t => t.nombre === tipo);
+    if (!tipoConfig) {
+        mostrarNotificacion('Tipo de gasto no válido', 'error');
+        console.error('Tipo de gasto no encontrado en GASTOS_TIPOS:', tipo);
         return;
     }
 
@@ -243,22 +306,33 @@ function agregarGasto(event) {
         fecha,
         monto,
         tipo,
+        categoria: tipoConfig.categoria,
         descripcion: descripcion || '',
         fechaRegistro: new Date().toISOString()
     };
 
-    gastos.push(nuevoGasto);
-    guardarGastos(gastos);
+    try {
+        gastos.push(nuevoGasto);
+        guardarGastos(gastos);
+        mostrarNotificacion('Gasto registrado correctamente', 'success');
+        console.log('Gasto agregado:', nuevoGasto);
 
-    mostrarNotificacion('Gasto registrado correctamente', 'success');
+        // Reset form
+        const formulario = obtenerElemento(GASTOS_IDS.FORMULARIO_GASTO);
+        if (formulario) {
+            formulario.reset();
+            const categoriaGastoInput = obtenerElemento('categoria-gasto');
+            if (categoriaGastoInput) categoriaGastoInput.value = '';
+        }
 
-    // Limpiar formulario
-    obtenerElemento(GASTOS_IDS.FORMULARIO_GASTO).reset();
-
-    // Actualizar la vista
-    actualizarTablaGastos();
-    actualizarResumenGastos();
-    actualizarDashboard();
+        // Update UI
+        actualizarTablaGastos();
+        actualizarResumenGastos();
+        actualizarDashboard();
+    } catch (error) {
+        console.error('Error al agregar gasto:', error);
+        mostrarNotificacion('Error al registrar el gasto', 'error');
+    }
 }
 
 // Función para filtrar gastos por fecha
@@ -296,15 +370,17 @@ function actualizarTablaGastos() {
     tbody.innerHTML = '';
 
     if (gastosFiltrados.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center">No hay gastos registrados</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay gastos registrados</td></tr>';
         return;
     }
 
     gastosFiltrados.sort((a, b) => new Date(b.fecha) - new Date(a.fecha)).forEach(gasto => {
         const row = document.createElement('tr');
+        row.classList.add(`${gasto.categoria}-row`);
         row.innerHTML = `
             <td>${new Date(gasto.fecha).toLocaleDateString('es-ES')}</td>
             <td>${gasto.tipo}</td>
+            <td>${gasto.categoria.charAt(0).toUpperCase() + gasto.categoria.slice(1)}</td>
             <td class="text-right">${formatearMoneda(gasto.monto)}</td>
             <td>${gasto.descripcion || '-'}</td>
             <td>${new Date(gasto.fechaRegistro).toLocaleString('es-ES')}</td>
@@ -324,15 +400,26 @@ function actualizarResumenGastos() {
     const hasta = obtenerElemento(IDS.FILTRO_HASTA)?.value;
     const gastosFiltrados = filtrarGastos(desde, hasta);
 
-    const totalGastos = gastosFiltrados.reduce((sum, gasto) => sum + gasto.monto, 0);
+    const totalGastosExternos = gastosFiltrados
+        .filter(gasto => gasto.categoria === 'externo')
+        .reduce((sum, gasto) => sum + gasto.monto, 0);
 
-    const elementoTotalGastos = obtenerElemento(GASTOS_IDS.TOTAL_GASTOS);
-    if (elementoTotalGastos) {
-        elementoTotalGastos.textContent = formatearMoneda(totalGastos);
+    const totalGastosInventario = gastosFiltrados
+        .filter(gasto => gasto.categoria === 'inventario')
+        .reduce((sum, gasto) => sum + gasto.monto, 0);
+
+    const elementoTotalGastosExternos = obtenerElemento('total-gastos-externos');
+    if (elementoTotalGastosExternos) {
+        elementoTotalGastosExternos.textContent = formatearMoneda(totalGastosExternos);
+    }
+
+    const elementoTotalGastosInventario = obtenerElemento('total-gastos-inventario');
+    if (elementoTotalGastosInventario) {
+        elementoTotalGastosInventario.textContent = formatearMoneda(totalGastosInventario);
     }
 
     actualizarGraficoGastos(gastosFiltrados);
-    return totalGastos;
+    return { totalGastosExternos, totalGastosInventario };
 }
 
 // Función para actualizar el gráfico de gastos
@@ -343,50 +430,93 @@ function actualizarGraficoGastos(gastos) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Agrupar gastos por tipo
-    const gastosPorTipo = {};
+    const gastosPorTipoYCategoria = {};
     GASTOS_TIPOS.forEach(tipo => {
-        gastosPorTipo[tipo] = 0;
+        gastosPorTipoYCategoria[tipo.nombre] = { externo: 0, inventario: 0 };
     });
 
     gastos.forEach(gasto => {
-        gastosPorTipo[gasto.tipo] += gasto.monto;
+        gastosPorTipoYCategoria[gasto.tipo][gasto.categoria] += gasto.monto;
     });
 
-    // Filtrar tipos con gastos > 0
-    const tiposConGastos = GASTOS_TIPOS.filter(tipo => gastosPorTipo[tipo] > 0);
-    const montos = tiposConGastos.map(tipo => gastosPorTipo[tipo]);
+    const labels = [];
+    const datosExternos = [];
+    const datosInventario = [];
 
-    // Destruir gráfico anterior si existe
+    GASTOS_TIPOS.forEach(tipo => {
+        if (gastosPorTipoYCategoria[tipo.nombre].externo > 0) {
+            labels.push(`${tipo.nombre} (Externo)`);
+            datosExternos.push(gastosPorTipoYCategoria[tipo.nombre].externo);
+            datosInventario.push(0);
+        }
+        if (gastosPorTipoYCategoria[tipo.nombre].inventario > 0) {
+            labels.push(`${tipo.nombre} (Inventario)`);
+            datosExternos.push(0);
+            datosInventario.push(gastosPorTipoYCategoria[tipo.nombre].inventario);
+        }
+    });
+
     if (window.graficoGastos) {
         window.graficoGastos.destroy();
     }
 
-    // Crear nuevo gráfico
+    if (labels.length === 0) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#666';
+        ctx.textAlign = 'center';
+        ctx.font = '16px Arial';
+        ctx.fillText('No hay gastos para mostrar', canvas.width / 2, canvas.height / 2);
+        return;
+    }
+
     try {
         window.graficoGastos = new Chart(ctx, {
-            type: 'doughnut',
+            type: 'bar',
             data: {
-                labels: tiposConGastos,
-                datasets: [{
-                    data: montos,
-                    backgroundColor: [
-                        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0',
-                        '#9966FF', '#FF9F40', '#8D6E63', '#66BB6A'
-                    ],
-                    borderWidth: 1
-                }]
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Gastos Externos',
+                        data: datosExternos,
+                        backgroundColor: '#FF6384',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Gastos de Inventario',
+                        data: datosInventario,
+                        backgroundColor: '#36A2EB',
+                        borderWidth: 1
+                    }
+                ]
             },
             options: {
                 responsive: true,
                 plugins: {
                     legend: {
-                        position: 'right',
+                        position: 'top'
                     },
                     tooltip: {
                         callbacks: {
                             label: function (context) {
-                                return `${context.label}: ${formatearMoneda(context.raw)}`;
+                                return `${context.dataset.label}: ${formatearMoneda(context.raw)}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: true
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Monto ($)'
+                        },
+                        ticks: {
+                            callback: function (value) {
+                                return formatearMoneda(value);
                             }
                         }
                     }
@@ -522,6 +652,31 @@ function mostrarDashboard() {
     actualizarDashboard();
 }
 
+function configurarFormularioGastos() {
+    const tipoGastoSelect = obtenerElemento(GASTOS_IDS.TIPO_GASTO);
+    const categoriaGastoInput = obtenerElemento('categoria-gasto');
+
+    if (tipoGastoSelect && categoriaGastoInput) {
+        // Populate the select options
+        tipoGastoSelect.innerHTML = `
+            <option value="">Seleccionar...</option>
+            ${GASTOS_TIPOS.map(tipo => `<option value="${tipo.nombre}">${tipo.nombre}</option>`).join('')}
+        `;
+
+        tipoGastoSelect.addEventListener('change', () => {
+            const tipoSeleccionado = tipoGastoSelect.value;
+            const tipoConfig = GASTOS_TIPOS.find(t => t.nombre === tipoSeleccionado);
+            categoriaGastoInput.value = tipoConfig ? tipoConfig.categoria : '';
+        });
+    } else {
+        console.error('No se encontraron los elementos del formulario de gastos:', {
+            tipoGastoSelect,
+            categoriaGastoInput
+        });
+        mostrarNotificacion('Error al configurar el formulario de gastos', 'error');
+    }
+}
+
 function manejarCambioMeta(event) {
     // Guardar el nuevo tipo de meta
     tipoMetaActual = event.target.value;
@@ -532,77 +687,6 @@ function manejarCambioMeta(event) {
 
     // Forzar recálculo completo con el nuevo tipo de meta
     recalcularMetaDesdeCero();
-}
-
-function actualizarMeta(ventasPeriodo, tipoMeta) {
-    const config = METAS_CONFIG[tipoMeta];
-    const totalGastos = actualizarResumenGastos();
-    const utilidadNeta = ventasPeriodo - totalGastos;
-    const porcentaje = Math.min((utilidadNeta / config.meta) * 100, 100);
-    const faltante = Math.max(config.meta - utilidadNeta, 0);
-    const diasTranscurridos = calcularDiasTranscurridos(tipoMeta);
-    const proyeccion = calcularProyeccion(utilidadNeta, tipoMeta);
-
-    const containerId = `meta-${tipoMeta}-container`;
-    const container = document.getElementById(containerId);
-    
-    if (container) {
-        container.innerHTML = `
-            <div class="meta-header">
-                <h3>Meta ${config.label}</h3>
-                <span class="badge ${utilidadNeta >= config.meta ? 'bg-success' : 'bg-warning'}">
-                    ${porcentaje.toFixed(1)}%
-                </span>
-            </div>
-            
-            <div class="meta-details">
-                <div class="meta-stats">
-                    <div class="stat">
-                        <span class="stat-label">Meta:</span>
-                        <span class="stat-value">${formatearMoneda(config.meta)}</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-label">Utilidad Neta:</span>
-                        <span class="stat-value ${utilidadNeta >= 0 ? 'text-success' : 'text-danger'}">
-                            ${formatearMoneda(utilidadNeta)}
-                        </span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-label">Faltante:</span>
-                        <span class="stat-value">${formatearMoneda(faltante)}</span>
-                    </div>
-                </div>
-                
-                <div class="progress-container">
-                    <div class="progress-bar" style="width: ${porcentaje}%; 
-                        background-color: ${porcentaje >= 100 ? config.colorCompleto : config.colorProgreso};">
-                        <span class="progress-text">${porcentaje.toFixed(1)}%</span>
-                    </div>
-                </div>
-                
-                <div class="meta-secondary-stats">
-                    <div class="stat">
-                        <span class="stat-label">Ventas Brutas:</span>
-                        <span class="stat-value">${formatearMoneda(ventasPeriodo)}</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-label">Gastos:</span>
-                        <span class="stat-value text-danger">${formatearMoneda(totalGastos)}</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-label">Proyección:</span>
-                        <span class="stat-value ${proyeccion >= config.meta ? 'text-success' : 'text-warning'}">
-                            ${formatearMoneda(proyeccion)}
-                        </span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="meta-tips">
-                ${generarConsejosMeta(porcentaje, faltante, tipoMeta)}
-            </div>
-        `;
-    }
 }
 
 // 3. Funciones auxiliares para las metas
@@ -667,16 +751,113 @@ function recalcularMetaDesdeCero() {
     if (!desde || !hasta) return;
 
     const pedidos = obtenerPedidos();
-    const pedidosFiltrados = pedidos.filter(pedido => {
-        const fechaPedido = new Date(pedido.fecha).toISOString().split('T')[0];
+    const pedidosFiltrados = pedidos.filter(p => {
+        const fechaPedido = new Date(p.fecha).toISOString().split('T')[0];
         return fechaPedido >= desde && fechaPedido <= hasta;
     });
 
-    const ventasPeriodo = pedidosFiltrados.reduce((sum, pedido) => sum + (pedido.total || 0), 0);
-    const totalGastos = actualizarResumenGastos();
-    const utilidadNeta = ventasPeriodo - totalGastos;
+    const totalVentas = pedidosFiltrados.reduce((sum, pedido) => sum + (pedido.total || 0), 0);
+    const { totalGastosExternos, totalGastosInventario } = actualizarResumenGastos();
+    const { totalCostos, totalGanancias } = calcularProductosConCostos(pedidosFiltrados, 10);
+    
+    // NUEVA LÓGICA: Calcular utilidad neta para la meta
+    let utilidadNeta = totalGanancias - totalGastosExternos;
+    if (totalGastosInventario > totalCostos) {
+        const excesoInventario = totalGastosInventario - totalCostos;
+        utilidadNeta -= excesoInventario; // Restar solo el exceso
+    }
 
-    actualizarMeta(utilidadNeta, tipoMetaActual);
+    actualizarMeta(totalVentas, tipoMetaActual);
+}
+
+function actualizarMeta(ventasPeriodo, tipoMeta) {
+    const config = METAS_CONFIG[tipoMeta];
+    const { totalGastosExternos, totalGastosInventario } = actualizarResumenGastos();
+    const { totalCostos, totalGanancias } = calcularProductosConCostos(obtenerPedidos(), 10);
+    
+    // NUEVA LÓGICA: Calcular utilidad neta considerando exceso de inventario
+    let utilidadNeta = totalGanancias - totalGastosExternos;
+    let excesoInventario = 0;
+    if (totalGastosInventario > totalCostos) {
+        excesoInventario = totalGastosInventario - totalCostos;
+        utilidadNeta -= excesoInventario;
+    }
+
+    const porcentaje = Math.min((utilidadNeta / config.metaGanancias) * 100, 100);
+    const faltante = Math.max(config.metaGanancias - utilidadNeta, 0);
+    const diasTranscurridos = calcularDiasTranscurridos(tipoMeta);
+    const proyeccion = calcularProyeccion(utilidadNeta, tipoMeta);
+
+    const containerId = `meta-${tipoMeta}-container`;
+    const container = document.getElementById(containerId);
+    
+    if (container) {
+        container.innerHTML = `
+            <div class="meta-header">
+                <h3>Meta ${config.label}</h3>
+                <span class="badge ${utilidadNeta >= config.metaGanancias ? 'bg-success' : 'bg-warning'}">
+                    ${porcentaje.toFixed(1)}%
+                </span>
+            </div>
+            
+            <div class="meta-details">
+                <div class="meta-stats">
+                    <div class="stat">
+                        <span class="stat-label">Meta:</span>
+                        <span class="stat-value">${formatearMoneda(config.metaGanancias)}</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Utilidad Neta:</span>
+                        <span class="stat-value ${utilidadNeta >= 0 ? 'text-success' : 'text-danger'}">
+                            ${formatearMoneda(utilidadNeta)}
+                        </span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Faltante:</span>
+                        <span class="stat-value">${formatearMoneda(faltante)}</span>
+                    </div>
+                </div>
+                
+                <div class="progress-container">
+                    <div class="progress-bar" style="width: ${porcentaje}%; 
+                        background-color: ${porcentaje >= 100 ? config.colorCompleto : config.colorProgreso};">
+                        <span class="progress-text">${porcentaje.toFixed(1)}%</span>
+                    </div>
+                </div>
+                
+                <div class="meta-secondary-stats">
+                    <div class="stat">
+                        <span class="stat-label">Ventas Brutas:</span>
+                        <span class="stat-value">${formatearMoneda(ventasPeriodo)}</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Gastos Externos:</span>
+                        <span class="stat-value text-danger">${formatearMoneda(totalGastosExternos)}</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Gastos Inventario:</span>
+                        <span class="stat-value text-danger">${formatearMoneda(totalGastosInventario)}</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Exceso Inventario:</span>
+                        <span class="stat-value ${excesoInventario > 0 ? 'text-danger' : ''}">
+                            ${formatearMoneda(excesoInventario)}
+                        </span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Proyección:</span>
+                        <span class="stat-value ${proyeccion >= config.metaGanancias ? 'text-success' : 'text-warning'}">
+                            ${formatearMoneda(proyeccion)}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="meta-tips">
+                ${generarConsejosMeta(porcentaje, faltante, tipoMeta)}
+            </div>
+        `;
+    }
 }
 
 function alternarVistaMeta() {
@@ -734,6 +915,7 @@ function configurarEventListeners() {
         filtroMeta.addEventListener('change', (e) => {
             tipoMetaActual = e.target.value;
             alternarVistaMeta();
+            actualizarDashboard();
         });
     }
 
@@ -768,13 +950,21 @@ function configurarEventListeners() {
     // Configurar formulario de gastos
     const formularioGasto = obtenerElemento(GASTOS_IDS.FORMULARIO_GASTO);
     if (formularioGasto) {
-        formularioGasto.addEventListener('submit', agregarGasto);
+        formularioGasto.addEventListener('submit', (event) => {
+            console.log('Formulario de gasto enviado'); // Debug log
+            agregarGasto(event);
+        });
+    } else {
+        console.error('Formulario de gastos no encontrado:', GASTOS_IDS.FORMULARIO_GASTO);
+        mostrarNotificacion('Formulario de gastos no encontrado', 'error');
     }
 
     // Configurar fecha de gasto por defecto (hoy)
     const fechaGasto = obtenerElemento(GASTOS_IDS.FECHA_GASTO);
     if (fechaGasto) {
         fechaGasto.valueAsDate = new Date();
+    } else {
+        console.error('Campo de fecha de gasto no encontrado:', GASTOS_IDS.FECHA_GASTO);
     }
 }
 
@@ -810,6 +1000,9 @@ function calcularProductosConCostos(pedidos, limite = 10) {
     let gananciasEnvios = 0;
     let costosEnvios = 0;
 
+    // Obtener combos desde combos.js
+    const combos = window.ComboManager ? window.ComboManager.cargarCombosGuardados() : [];
+
     pedidos.forEach(pedido => {
         // Calcular costo de envío si existe
         const costoEnvio = asegurarNumero(pedido.costoEnvio);
@@ -823,46 +1016,92 @@ function calcularProductosConCostos(pedidos, limite = 10) {
         if (!pedido.items || !Array.isArray(pedido.items)) return;
 
         pedido.items.forEach(item => {
-            const nombre = item.nombre ? item.nombre.split('(')[0].trim() : 'Producto sin nombre';
-            const cantidad = item.cantidad || 0;
-            const precio = item.precio || 0;
-            const totalVenta = precio * cantidad;
+            if (item.esCombo && item.comboId) {
+                // Manejar combos
+                const combo = combos.find(c => String(c.id) === String(item.comboId));
+                if (!combo) {
+                    console.warn(`Combo con ID ${item.comboId} no encontrado`);
+                    return;
+                }
 
-            // Obtener información de costos
-            const datosProducto = obtenerCostoProducto(nombre);
-            const costoUnitario = datosProducto.costo;
-            const costoTotal = costoUnitario * cantidad;
-            const gananciasProducto = totalVenta - costoTotal;
+                const nombre = item.nombre || `Combo ${combo.id}`;
+                const cantidad = asegurarNumero(item.cantidad);
+                const precioVenta = asegurarNumero(item.precio); // Precio del combo
+                const totalVenta = precioVenta * cantidad;
 
-            totalProductosVendidos += cantidad;
-            totalCostos += costoTotal;
-            totalGanancias += gananciasProducto;
+                // Calcular costo total del combo sumando los costos unitarios de sus items
+                const costoTotalCombo = combo.items.reduce((sum, comboItem) => {
+                    const costoUnitario = asegurarNumero(comboItem.costoUnitario);
+                    const cantidadItem = asegurarNumero(comboItem.cantidad);
+                    return sum + (costoUnitario * cantidadItem);
+                }, 0) * cantidad;
 
-            if (!productosMap[nombre]) {
-                productosMap[nombre] = {
-                    cantidad: 0,
-                    total: 0,
-                    costo: 0,
-                    ganancias: 0,
-                    costoUnitario: costoUnitario,
-                    precioUnitario: precio
-                };
+                const gananciasCombo = totalVenta - costoTotalCombo;
+
+                if (!productosMap[nombre]) {
+                    productosMap[nombre] = {
+                        cantidad: 0,
+                        total: 0,
+                        costo: 0,
+                        ganancias: 0,
+                        costoUnitario: costoTotalCombo / cantidad,
+                        precioUnitario: precioVenta,
+                        esCombo: true
+                    };
+                }
+
+                productosMap[nombre].cantidad += cantidad;
+                productosMap[nombre].total += totalVenta;
+                productosMap[nombre].costo += costoTotalCombo;
+                productosMap[nombre].ganancias += gananciasCombo;
+
+                totalProductosVendidos += cantidad;
+                totalCostos += costoTotalCombo;
+                totalGanancias += gananciasCombo;
+            } else {
+                // Manejar productos individuales
+                const nombre = item.nombre ? item.nombre.split('(')[0].trim() : 'Producto sin nombre';
+                const cantidad = asegurarNumero(item.cantidad);
+                const precio = asegurarNumero(item.precio);
+                const totalVenta = precio * cantidad;
+
+                // Obtener información de costos
+                const datosProducto = obtenerCostoProducto(nombre);
+                const costoUnitario = datosProducto.costo;
+                const costoTotal = costoUnitario * cantidad;
+                const gananciasProducto = totalVenta - costoTotal;
+
+                totalProductosVendidos += cantidad;
+                totalCostos += costoTotal;
+                totalGanancias += gananciasProducto;
+
+                if (!productosMap[nombre]) {
+                    productosMap[nombre] = {
+                        cantidad: 0,
+                        total: 0,
+                        costo: 0,
+                        ganancias: 0,
+                        costoUnitario: costoUnitario,
+                        precioUnitario: precio,
+                        esCombo: false
+                    };
+                }
+
+                productosMap[nombre].cantidad += cantidad;
+                productosMap[nombre].total += totalVenta;
+                productosMap[nombre].costo += costoTotal;
+                productosMap[nombre].ganancias += gananciasProducto;
             }
-
-            productosMap[nombre].cantidad += cantidad;
-            productosMap[nombre].total += totalVenta;
-            productosMap[nombre].costo += costoTotal;
-            productosMap[nombre].ganancias += gananciasProducto;
         });
     });
 
-    // Calcular el margen general CORREGIDO
+    // Calcular el margen general
     const totalVentasPeriodo = pedidos.reduce((sum, p) => sum + (p.total || 0), 0);
     const margenGeneral = totalVentasPeriodo > 0 ? 
         ((totalGanancias + gananciasEnvios) / totalVentasPeriodo) * 100 : 0;
 
-    // Preparar productos normales (excluyendo envíos)
-    const productosNormales = Object.entries(productosMap)
+    // Preparar productos (incluyendo combos) para la tabla
+    const topProductos = Object.entries(productosMap)
         .map(([nombre, datos]) => ({
             nombre,
             ...datos,
@@ -872,7 +1111,7 @@ function calcularProductosConCostos(pedidos, limite = 10) {
         .slice(0, limite);
 
     return {
-        topProductos: productosNormales, // Solo productos normales
+        topProductos,
         totalProductosVendidos,
         totalCostos: totalCostos + costosEnvios,
         totalGanancias: totalGanancias + gananciasEnvios,
@@ -978,6 +1217,8 @@ function actualizarTablaProductos(productos, totalVentas) {
 
         if (producto.nombre === 'Envíos') {
             row.classList.add('envio-row');
+        } else if (producto.esCombo) {
+            row.classList.add('combo-row');
         }
 
         let colorMargen = 'text-success';
@@ -985,7 +1226,7 @@ function actualizarTablaProductos(productos, totalVentas) {
         else if (producto.margenGanancia < 50) colorMargen = 'text-warning';
 
         row.innerHTML = `
-            <td>${producto.nombre}${producto.nombre === 'Envíos' ? ' <i class="fas fa-truck"></i>' : ''}</td>
+            <td>${producto.nombre}${producto.nombre === 'Envíos' ? ' <i class="fas fa-truck"></i>' : producto.esCombo ? ' <i class="fas fa-box"></i>' : ''}</td>
             <td class="text-right">${producto.cantidad.toLocaleString()}</td>
             <td class="text-right">${formatearMoneda(producto.total)}</td>
             <td class="text-right">${formatearMoneda(producto.costo)}</td>
@@ -1115,6 +1356,7 @@ function actualizarGraficoVentas(pedidos, desde, hasta) {
     }
 }
 
+// Función MODIFICADA para enviar el resumen detallado
 function enviarResumenDetallado() {
     try {
         const pedidos = obtenerPedidos();
@@ -1122,7 +1364,6 @@ function enviarResumenDetallado() {
         const desde = obtenerElemento(IDS.FILTRO_DESDE)?.value;
         const hasta = obtenerElemento(IDS.FILTRO_HASTA)?.value;
 
-        // Validación de fechas
         if (!desde || !hasta) {
             mostrarNotificacion('Por favor selecciona las fechas para generar el resumen', 'warning');
             return;
@@ -1137,10 +1378,8 @@ function enviarResumenDetallado() {
         }
 
         const diasDiferencia = Math.ceil((fechaFin - fechaInicio) / (1000 * 60 * 60 * 24)) + 1;
-        
-        // 1. Manejo de días sin ventas
-        const pedidosFiltrados = pedidos.filter(pedido => {
-            const fechaPedido = new Date(pedido.fecha).toISOString().split('T')[0];
+        const pedidosFiltrados = pedidos.filter(p => {
+            const fechaPedido = new Date(p.fecha).toISOString().split('T')[0];
             return fechaPedido >= desde && fechaPedido <= hasta;
         });
 
@@ -1151,7 +1390,6 @@ function enviarResumenDetallado() {
             return;
         }
 
-        // Cálculos principales
         const totalVentas = pedidosFiltrados.reduce((sum, p) => sum + (p.total || 0), 0);
         const totalPedidos = pedidosFiltrados.length;
         const promedioTicket = totalPedidos > 0 ? (totalVentas / totalPedidos) : 0;
@@ -1159,7 +1397,6 @@ function enviarResumenDetallado() {
         const contieneCombos = pedidosFiltrados.some(pedido => pedido.items.some(item => item.esCombo === true));
         const soloCombos = pedidosFiltrados.every(pedido => pedido.items.every(item => item.esCombo === true));
 
-        // Calcular costos y ganancias
         const {
             topProductos,
             totalProductosVendidos,
@@ -1170,11 +1407,22 @@ function enviarResumenDetallado() {
             margenGananciasGeneral
         } = calcularProductosConCostos(pedidosFiltrados, 10);
 
-        // Calcular gastos
-        const totalGastos = gastosFiltrados.reduce((sum, gasto) => sum + gasto.monto, 0);
-        const gananciasNetas = totalGanancias - totalGastos;
+        const totalGastosExternos = gastosFiltrados
+            .filter(gasto => gasto.categoria === 'externo')
+            .reduce((sum, gasto) => sum + gasto.monto, 0);
+        const totalGastosInventario = gastosFiltrados
+            .filter(gasto => gasto.categoria === 'inventario')
+            .reduce((sum, gasto) => sum + gasto.monto, 0);
+        
+        // NUEVA LÓGICA: Calcular utilidad neta y exceso de inventario
+        let utilidadNeta = totalGanancias - totalGastosExternos;
+        let excesoInventario = 0;
+        if (totalGastosInventario > totalCostos) {
+            excesoInventario = totalGastosInventario - totalCostos;
+            utilidadNeta -= excesoInventario;
+        }
+        const dineroCaja = totalVentas - totalGastosExternos - totalGastosInventario;
 
-        // Calcular ventas por día
         const ventasPorDia = {};
         pedidosFiltrados.forEach(pedido => {
             const fecha = new Date(pedido.fecha).toLocaleDateString('es-ES');
@@ -1184,36 +1432,28 @@ function enviarResumenDetallado() {
             ventasPorDia[fecha] += pedido.total || 0;
         });
 
-        // 1. Días sin ventas
         const diasSinVentas = diasDiferencia - Object.keys(ventasPorDia).length;
         const porcentajeDiasConVentas = ((diasDiferencia - diasSinVentas) / diasDiferencia * 100).toFixed(1);
 
-        // 2. Análisis de tendencias (solo si hay suficientes días)
         let analisisTendencia = '';
         if (diasDiferencia > 7) {
             const mitadPeriodo = new Date(fechaInicio.getTime() + (fechaFin - fechaInicio) / 2);
-            
             const ventasPrimeraMitad = pedidosFiltrados
                 .filter(p => new Date(p.fecha) <= mitadPeriodo)
                 .reduce((sum, p) => sum + (p.total || 0), 0);
-            
             const ventasSegundaMitad = totalVentas - ventasPrimeraMitad;
-            
             const cambioPorcentual = ventasPrimeraMitad > 0 ? 
                 ((ventasSegundaMitad - ventasPrimeraMitad) / ventasPrimeraMitad * 100) : 0;
-            
             analisisTendencia = `• Tendencia ventas: ${cambioPorcentual >= 0 ? '↑' : '↓'} ${Math.abs(cambioPorcentual).toFixed(1)}% ` +
                                `(${formatearMoneda(ventasPrimeraMitad)} → ${formatearMoneda(ventasSegundaMitad)})\n`;
         }
 
-        // 3. Comparativa con período anterior
         let comparativaPeriodoAnterior = '';
         try {
             const periodoAnterior = calcularComparativaPeriodoAnterior(desde, hasta, pedidos);
             if (periodoAnterior) {
                 const cambioVentas = periodoAnterior.totalVentas > 0 ? 
                     ((totalVentas - periodoAnterior.totalVentas) / periodoAnterior.totalVentas * 100) : 0;
-                
                 comparativaPeriodoAnterior = `• Comparativa con período anterior (${periodoAnterior.dias} días):\n` +
                     `   - Ventas: ${cambioVentas >= 0 ? '+' : ''}${cambioVentas.toFixed(1)}%\n` +
                     `   - Pedidos: ${periodoAnterior.totalPedidos > 0 ? 
@@ -1225,7 +1465,6 @@ function enviarResumenDetallado() {
             console.error('Error calculando comparativa:', e);
         }
 
-        // Calcular meta proporcional
         let metaCalculada;
         if (tipoMetaActual === 'mensual') {
             const diasEnMes = new Date(fechaFin.getFullYear(), fechaFin.getMonth() + 1, 0).getDate();
@@ -1236,18 +1475,19 @@ function enviarResumenDetallado() {
 
         const porcentajeMeta = (totalVentas / metaCalculada) * 100;
 
-        // Crear mensaje detallado
         const fechaFormateada = `${fechaInicio.toLocaleDateString('es-ES')} - ${fechaFin.toLocaleDateString('es-ES')}`;
-
         let mensaje = `📊 *REPORTE DETALLADO*\n`;
         mensaje += `📅 *Período:* ${fechaFormateada} (${diasDiferencia} días)\n\n`;
 
         mensaje += `💰 *RESUMEN FINANCIERO*\n`;
         mensaje += `• Ventas totales: ${formatearMoneda(totalVentas)}\n`;
-        mensaje += `• Costos totales: ${formatearMoneda(totalCostos)}\n`;
-        mensaje += `• Gastos totales: ${formatearMoneda(totalGastos)}\n`;
+        mensaje += `• Costos de producción: ${formatearMoneda(totalCostos)}\n`;
+        mensaje += `• Gastos externos: ${formatearMoneda(totalGastosExternos)}\n`;
+        mensaje += `• Gastos de inventario: ${formatearMoneda(totalGastosInventario)}\n`;
+        mensaje += `• Exceso de inventario: ${formatearMoneda(excesoInventario)}\n`;
         mensaje += `• Ganancias brutas: ${formatearMoneda(totalGanancias)}\n`;
-        mensaje += `• Ganancias netas: ${formatearMoneda(gananciasNetas)}\n`;
+        mensaje += `• Ganancias netas: ${formatearMoneda(utilidadNeta)}\n`;
+        mensaje += `• Dinero en caja: ${formatearMoneda(dineroCaja)}\n`;
         mensaje += `• Margen de ganancia: ${margenGananciasGeneral.toFixed(1)}%\n`;
         if (totalDescuentos > 0) {
             let descuentoTexto = `• Descuentos aplicados: ${formatearMoneda(totalDescuentos)}`;
@@ -1261,39 +1501,42 @@ function enviarResumenDetallado() {
         mensaje += `• Ventas por envíos: ${formatearMoneda(totalEnvios)}\n`;
         mensaje += `• Ganancias por envíos: ${formatearMoneda(gananciasEnvios)}\n\n`;
 
-        // Añadir análisis de tendencia si aplica
         if (analisisTendencia) {
             mensaje += `📈 *ANÁLISIS DE TENDENCIAS*\n`;
             mensaje += analisisTendencia;
         }
 
-        // Añadir comparativa si existe
         if (comparativaPeriodoAnterior) {
             mensaje += `🔍 *COMPARATIVA*\n`;
             mensaje += comparativaPeriodoAnterior;
         }
 
-        // Sección de gastos si hay
         if (gastosFiltrados.length > 0) {
-            mensaje += `💸 *GASTOS PRINCIPALES*\n`;
-
-            // Agrupar gastos por tipo
+            mensaje += `💸 *GASTOS POR CATEGORÍA*\n`;
             const gastosPorTipo = {};
             GASTOS_TIPOS.forEach(tipo => {
-                gastosPorTipo[tipo] = 0;
+                gastosPorTipo[tipo.nombre] = { externo: 0, inventario: 0 };
             });
 
             gastosFiltrados.forEach(gasto => {
-                gastosPorTipo[gasto.tipo] += gasto.monto;
+                if (gasto.categoria === 'externo') {
+                    gastosPorTipo[gasto.tipo].externo += gasto.monto;
+                } else {
+                    gastosPorTipo[gasto.tipo].inventario += gasto.monto;
+                }
             });
 
-            // Ordenar de mayor a menor
             const gastosOrdenados = Object.entries(gastosPorTipo)
-                .filter(([_, monto]) => monto > 0)
-                .sort((a, b) => b[1] - a[1]);
+                .filter(([_, montos]) => montos.externo > 0 || montos.inventario > 0)
+                .sort((a, b) => (b[1].externo + b[1].inventario) - (a[1].externo + a[1].inventario));
 
-            gastosOrdenados.forEach(([tipo, monto], index) => {
-                mensaje += `${index + 1}. ${tipo}: ${formatearMoneda(monto)}\n`;
+            gastosOrdenados.forEach(([tipo, montos], index) => {
+                if (montos.externo > 0) {
+                    mensaje += `${index + 1}. ${tipo} (Externo): ${formatearMoneda(montos.externo)}\n`;
+                }
+                if (montos.inventario > 0) {
+                    mensaje += `${index + 1}. ${tipo} (Inventario): ${formatearMoneda(montos.inventario)}\n`;
+                }
             });
 
             mensaje += `\n`;
@@ -1312,39 +1555,29 @@ function enviarResumenDetallado() {
 
         mensaje += `🏆 *TOP 5 PRODUCTOS MÁS VENDIDOS*\n`;
         topProductos.slice(0, 5).forEach((producto, index) => {
-            mensaje += `${index + 1}. *${producto.nombre}*\n`;
+            mensaje += `${index + 1}. *${producto.nombre}${producto.esCombo ? ' (Combo)' : ''}*\n`;
             mensaje += `   • Cantidad: ${producto.cantidad.toLocaleString()}\n`;
             mensaje += `   • Ventas: ${formatearMoneda(producto.total)}\n`;
             mensaje += `   • Ganancias: ${formatearMoneda(producto.ganancias)}\n`;
             mensaje += `   • Margen: ${producto.margenGanancia.toFixed(1)}%\n\n`;
         });
 
-        // 4. Optimización para WhatsApp
         if (mensaje.length > 50000) {
             const mensajeOriginal = mensaje;
             mensaje = mensaje.substring(0, 45000) + "\n\n... [RESUMEN ACORTADO POR LÍMITE DE CARACTERES] ...\n";
-            
-            // Intentar mantener las partes más importantes
             const partesImportantes = [
-                mensajeOriginal.match(/📊.*?\n\n/)[0], // Encabezado
-                mensajeOriginal.match(/💰.*?\n\n/)[0], // Resumen financiero
-                mensajeOriginal.match(/🎯.*?\n\n/)[0], // Meta
-                mensajeOriginal.match(/🏆.*?%\n\n/)[0] // Top productos
+                mensajeOriginal.match(/📊.*?\n\n/)[0],
+                mensajeOriginal.match(/💰.*?\n\n/)[0],
+                mensajeOriginal.match(/🎯.*?\n\n/)[0],
+                mensajeOriginal.match(/🏆.*?%\n\n/)[0]
             ].join('\n');
-            
             mensaje = partesImportantes + "\n\n... [RESUMEN COMPLETO DEMASIADO EXTENSO] ...";
         }
 
         mensaje += `⏰ *Generado el ${new Date().toLocaleString('es-ES')}*`;
 
-        try {
-            const url = `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
-            window.open(url, '_blank');
-        } catch (error) {
-            console.error('Error al abrir WhatsApp:', error);
-            mostrarNotificacion('Error al abrir WhatsApp', 'error');
-        }
-
+        const url = `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
+        window.open(url, '_blank');
     } catch (error) {
         console.error('Error generando resumen:', error);
         mostrarNotificacion('Error al generar el resumen', 'error');
@@ -1404,11 +1637,12 @@ function inicializarDashboard() {
     const elementoMetaMensual = obtenerElemento('meta-mensual-valor');
     const elementoMetaSemanal = obtenerElemento('meta-semanal-valor');
     
-    if (elementoMetaMensual) elementoMetaMensual.textContent = formatearMoneda(METAS_CONFIG.mensual.meta);
-    if (elementoMetaSemanal) elementoMetaSemanal.textContent = formatearMoneda(METAS_CONFIG.semanal.meta);
+    if (elementoMetaMensual) elementoMetaMensual.textContent = formatearMoneda(METAS_CONFIG.mensual.metaGanancias);
+    if (elementoMetaSemanal) elementoMetaSemanal.textContent = formatearMoneda(METAS_CONFIG.semanal.metaGanancias);
 
     actualizarTablaGastos();
     actualizarResumenGastos();
+    configurarFormularioGastos();
 }
 
 // Ejecutar cuando el DOM esté listo

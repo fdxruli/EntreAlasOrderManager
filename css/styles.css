@@ -639,6 +639,79 @@ header h1 {
   border-color: #c9cdd2;
 }
 
+/* Estilos para los botones compactos */
+.pedido-acciones {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.acciones-superiores {
+    display: flex;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.btn-accion {
+    padding: 0.7rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+}
+
+.btn-accion.compacto {
+    min-width: 120px;
+    max-width: 45px;
+    padding: 0.7rem 0;
+}
+
+.btn-accion.principal {
+    width: 100%;
+    padding: 0.9rem;
+    font-size: 1rem;
+}
+
+#reiniciar-pedido {
+    background-color: #ff9800;
+    color: white;
+}
+
+#btn-nuevo-pedido {
+    background-color: #2196F3;
+    color: white;
+}
+
+#vista-previa-btn {
+    background-color: var(--color-secondary);
+    color: white;
+    flex: 2;
+}
+
+#enviar-whatsapp {
+    background-color: var(--color-success);
+    color: white;
+}
+
+/* Efectos hover */
+.btn-accion:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+#reiniciar-pedido:hover { background-color: #e68a00; }
+#btn-nuevo-pedido:hover { background-color: #0b7dda; }
+#vista-previa-btn:hover { background-color: #208e82; }
+#enviar-whatsapp:hover { background-color: #51a355; }
+/*fin*/
+
 #envio-monto {
   min-width: 60px;
   text-align: right;
@@ -1168,6 +1241,22 @@ header h1 {
 
 .combo-list-table .btn-delete-combo:hover {
   background: rgba(var(--color-danger-rgb), 0.9);
+}
+.btn-share-whatsapp {
+    background-color: #25D366;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    margin: 2px;
+    transition: all 0.3s;
+}
+
+.btn-share-whatsapp:hover {
+    background-color: #128C7E;
+    transform: scale(1.05);
 }
 
 /* Combos panel (outside modal) */
@@ -2233,6 +2322,70 @@ input:disabled {
   display: none;
 }
 
+/* Estilos para la sección de punto de equilibrio */
+.punto-equilibrio {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.equilibrio-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.equilibrio-stats .stat {
+    padding: 10px;
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.equilibrio-stats .stat.highlight {
+    background-color: #e8f5e9;
+    border-left: 4px solid #4CAF50;
+}
+
+.productos-equilibrio {
+    margin-top: 15px;
+}
+
+.productos-equilibrio h4 {
+    margin-bottom: 10px;
+    color: #555;
+    font-size: 16px;
+}
+
+/* Estilos para las metas mejoradas */
+.meta-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.meta-badges {
+    display: flex;
+    gap: 8px;
+}
+
+.progress-label {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.meta-secondary-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 15px;
+}
+/*fin*/
 
 /* Buscar Pedido Modal */
 .busqueda-form {
@@ -2500,6 +2653,13 @@ input:disabled {
 #btn-agregar-gasto {
   height: 38px;
   width: 100%;
+}
+
+tr.inventario-row {
+    background-color: rgba(54, 162, 235, 0.1);
+}
+tr.externo-row {
+    background-color: rgba(255, 99, 132, 0.1);
 }
 
 /* Notifications */

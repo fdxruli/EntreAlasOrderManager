@@ -6,7 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Pedidos - ENTRE ALAS</title>
     <link rel="stylesheet" href="css/styles.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="libs/chart.js"></script>
+    <link rel="manifest" href="/manifest.json">
     <link rel="icon" type="image/png" href="imagen-icono/safeimagekit-logo-entrealas-sep24-2-01_051032.png">
 </head>
 
@@ -15,7 +16,6 @@
         <header>
             <h1>Administrador de Pedidos</h1>
             <div class="admin-actions">
-                <button id="btn-nuevo-pedido">🆕 Nuevo Pedido</button>
                 <button id="btn-editar-pedido">✏️ Editar Pedido</button>
                 <button id="btn-descuentos">🎫 Descuentos</button>
                 <button id="btn-dashboard">📊 Dashboard</button>
@@ -90,10 +90,12 @@
                 </div>
 
                 <div class="pedido-acciones">
-                    <!-- Cambia esto en tu pedido-acciones -->
-                    <button id="reiniciar-pedido">🔄 Reiniciar Pedido</button>
-                    <button id="vista-previa-btn">👁️ Vista Previa</button>
-                    <button id="enviar-whatsapp">📤 Enviar por WhatsApp</button>
+                    <div class="acciones-superiores">
+                        <button id="reiniciar-pedido" class="btn-accion compacto">🔄</button>
+                        <button id="btn-nuevo-pedido" class="btn-accion compacto">🆕</button>
+                        <button id="vista-previa-btn" class="btn-accion">👁️ Vista Previa</button>
+                    </div>
+                    <button id="enviar-whatsapp" class="btn-accion principal">📤 Enviar WhatsApp</button>
                 </div>
             </div>
         </div>
@@ -258,6 +260,14 @@
                             <div class="metric-footer">Ganancias - Gastos</div>
                         </div>
 
+                        <div class="metric-card card highlight">
+                            <div class="metric-header">
+                                <h4><i class="fas fa-calculator"></i> dinero en caja </h4>
+                            </div>
+                            <div class="metric-value" id="dinero-caja">$0.00</div>
+                            <div class="metric-footer">total de dinero en caja*</div>
+                        </div>
+
                         <!-- 3. Ganancias -->
                         <div class="metric-card card">
                             <div class="metric-header">
@@ -265,6 +275,14 @@
                             </div>
                             <div class="metric-value" id="total-ganancias">$0.00</div>
                             <div class="metric-footer">Antes de gastos</div>
+                        </div>
+
+                        <div class="metric-card card">
+                            <div class="metric-header">
+                                <h4><i class="fas fa-tag"></i> Gastos 2</h4>
+                            </div>
+                            <div class="metric-value" id="total-gastos-inventario">$0.00</div>
+                            <div class="metric-footer">Inventario</div>
                         </div>
 
                         <!-- 4. Costos -->
@@ -281,8 +299,8 @@
                             <div class="metric-header">
                                 <h4><i class="fas fa-credit-card"></i> Gastos</h4>
                             </div>
-                            <div class="metric-value" id="total-gastos">$0.00</div>
-                            <div class="metric-footer">Operativos</div>
+                            <div class="metric-value" id="total-gastos-externos">$0.00</div>
+                            <div class="metric-footer">Externos</div>
                         </div>
 
                         <!-- 6. Envíos -->
@@ -333,7 +351,6 @@
                         <!-- 11. Productos Vendidos -->
                         <div class="metric-card card">
                             <div class="metric-header">
-                                <h4><i class="fas fa-boxes"></i> Productos</h4>
                             </div>
                             <div class="metric-value" id="total-productos-vendidos">0</div>
                             <div class="metric-footer">Vendidos</div>
@@ -456,15 +473,13 @@
                                     <label for="tipo-gasto">Tipo</label>
                                     <select id="tipo-gasto" class="form-control" required>
                                         <option value="">Seleccionar...</option>
-                                        <option value="Sueldos">Sueldos</option>
-                                        <option value="Renta">Renta</option>
-                                        <option value="Servicios">Servicios</option>
-                                        <option value="Insumos">Insumos</option>
-                                        <option value="Mantenimiento">Mantenimiento</option>
-                                        <option value="Publicidad">Publicidad</option>
-                                        <option value="Impuestos">Impuestos</option>
-                                        <option value="Otros">Otros</option>
+                                        ${GASTOS_TIPOS.map(tipo => `<option value="${tipo.nombre}">${tipo.nombre}
+                                        </option>`).join('')}
                                     </select>
+                                </div>
+                                <div>
+                                    <label for="categoria-gasto">Categoría</label>
+                                    <input type="text" id="categoria-gasto" class="form-control" readonly>
                                 </div>
                                 <div>
                                     <label for="descripcion-gasto">Descripción</label>
@@ -492,16 +507,20 @@
                         <h4><i class="fas fa-list"></i> Historial de Gastos</h4>
                         <div class="table-responsive">
                             <table class="table table-hover">
-                                <thead class="table-header">
-                                    <tr>
-                                        <th>Fecha</th>
-                                        <th>Tipo</th>
-                                        <th class="text-right">Monto</th>
-                                        <th>Descripción</th>
-                                        <th>Registro</th>
-                                        <th class="text-center">Acciones</th>
-                                    </tr>
-                                </thead>
+                                <table id="tabla-gastos" class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Fecha</th>
+                                            <th>Tipo</th>
+                                            <th>Categoría</th>
+                                            <th>Monto</th>
+                                            <th>Descripción</th>
+                                            <th>Fecha Registro</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
                                 <tbody id="tabla-gastos"></tbody>
                             </table>
                         </div>
@@ -661,7 +680,7 @@
     <script src="js/dashboard.js"></script>
     <script src="js/storage.js"></script>
     <script src="js/whatsapp.js"></script>
-    <script src="css/app.js"></script>
+    <script src="js/app.js"></script>
 </body>
 
 </html>

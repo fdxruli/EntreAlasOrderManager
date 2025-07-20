@@ -84,6 +84,7 @@ function mostrarListaCombosModal() {
               <td>
                   <button class="btn-edit-combo" data-id="${combo.id}">✏️ Editar</button>
                   <button class="btn-view-combo" data-id="${combo.id}">👁️ Ver</button>
+                  <button class="btn-share-whatsapp" data-id="${combo.id}">📱 Compartir</button>
                   <button class="btn-delete-combo" data-id="${combo.id}">🗑️ Eliminar</button>
               </td>
           </tr>
@@ -116,7 +117,63 @@ function mostrarListaCombosModal() {
           mostrarListaCombosModal();
       });
   });
+
+  document.querySelectorAll('.btn-share-whatsapp').forEach(btn => {
+      btn.addEventListener('click', function() {
+          const comboId = this.dataset.id;
+          compartirComboPorWhatsApp(comboId);
+      });
+  });
 }
+
+function compartirComboPorWhatsApp(comboId) {
+    const combo = obtenerComboPorId(comboId);
+    if (!combo) {
+        mostrarNotificacion('Combo no encontrado', 'error');
+        return;
+    }
+
+    // Calcular ahorro del cliente
+    const precioNormal = combo.items.reduce((sum, item) => {
+        return sum + (item.precioVentaUnitario * item.cantidad);
+    }, 0);
+    const ahorro = precioNormal - combo.precio;
+    const porcentajeAhorro = (ahorro / precioNormal) * 100;
+
+    // Formatear la lista de productos
+    const listaProductos = combo.items.map(item => 
+        `✔️ ${item.cantidad}x ${item.productoNombre}`
+    ).join('\n');
+
+    // Fecha de vigencia si existe
+    const vigencia = combo.fechaFin ? 
+        `⏳ *Disponible hasta:* ${new Date(combo.fechaFin).toLocaleDateString()}\n\n` : 
+        '';
+
+    // Crear mensaje persuasivo
+    const mensaje = `🍗 *¡OFERTA IMPERDIBLE!* 🍗\n\n` +
+        `🎉 *${combo.nombre.toUpperCase()}*\n\n` +
+        `💥 *Precio especial:* $${combo.precio.toFixed(2)}\n` +
+        `🎯 *Ahorro total:* $${ahorro.toFixed(2)} (${porcentajeAhorro.toFixed(0)}% OFF)\n` +
+        `💸 Precio regular: $${precioNormal.toFixed(2)}\n\n` +
+        `📦 *Incluye:*\n${listaProductos}\n\n` +
+        `${vigencia}` +
+        `🔥 *¡Solo por tiempo limitado!* Aprovecha esta oportunidad:\n` +
+        `✅ Más comida por menos dinero\n` +
+        `✅ Combinación perfecta de sabores\n` +
+        `✅ Ideal para compartir y disfrutar\n\n` +
+        `🔁 *Comparte esta promo y que nadie se la pierda:*\n` ;
+
+    // Codificar el mensaje completo para el primer envío
+    const mensajeCodificado = encodeURIComponent(mensaje);
+
+    // Crear enlace de WhatsApp para el cliente
+    const urlWhatsApp = `https://wa.me/?text=${mensajeCodificado}`;
+
+    // Abrir en nueva pestaña
+    window.open(urlWhatsApp, '_blank');
+}
+
 
 // Nueva función para mostrar detalles del combo
 function mostrarDetallesCombo(comboId) {

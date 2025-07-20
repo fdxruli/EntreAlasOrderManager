@@ -1,16 +1,53 @@
-// Registrar el Service Worker
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker
-      .register('/EntreAlasOrderManager/sw.js')
+    navigator.serviceWorker.register(`${window.location.pathname.includes('localhost') ? '/3' : '/EntreAlasOrderManager'}/sw.js`)
       .then(registration => {
-        console.log('Service Worker registrado con éxito:', registration);
-      })
-      .catch(error => {
-        console.error('Error al registrar el Service Worker:', error);
+        console.log('SW registrado:', registration);
+
+        // Manejo de actualizaciones
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              console.log('Nueva versión disponible!');
+
+              // Mostrar notificación al usuario
+              const updateNotification = document.getElementById('update-notification');
+              updateNotification.style.display = 'block';
+
+              document.getElementById('update-button').addEventListener('click', () => {
+                newWorker.postMessage('skipWaiting');
+                window.location.reload(); // Recargar para aplicar cambios
+              });
+            }
+          });
+        });
       });
   });
-}
+}//el 3 aca es por el localhost en el servidor es EntreAlasOrderManager
+
+// Detecta si el navegador soporta instalación PWA
+let deferredPrompt;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  
+  // Muestra tu botón personalizado
+  const installButton = document.getElementById('install-button');
+  installButton.style.display = 'block';
+  
+  installButton.addEventListener('click', () => {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then((choiceResult) => {
+      if (choiceResult.outcome === 'accepted') {
+        console.log('Usuario instaló la PWA');
+      }
+      deferredPrompt = null;
+    });
+  });
+});
 
 document.addEventListener('DOMContentLoaded', function () {
   // Inicializar la aplicación

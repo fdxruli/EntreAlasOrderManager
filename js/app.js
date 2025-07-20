@@ -1,28 +1,26 @@
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register(`${window.location.pathname.includes('localhost') ? '/3' : '/EntreAlasOrderManager'}/sw.js`)
+    const swPath = window.location.host.includes('localhost') ? './sw.js' : '/EntreAlasOrderManager/sw.js';
+    navigator.serviceWorker.register(swPath)
       .then(registration => {
         console.log('SW registrado:', registration);
-
-        // Manejo de actualizaciones
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
-
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
               console.log('Nueva versión disponible!');
-
-              // Mostrar notificación al usuario
               const updateNotification = document.getElementById('update-notification');
               updateNotification.style.display = 'block';
-
               document.getElementById('update-button').addEventListener('click', () => {
                 newWorker.postMessage('skipWaiting');
-                window.location.reload(); // Recargar para aplicar cambios
+                window.location.reload();
               });
             }
           });
         });
+      })
+      .catch(error => {
+        console.error('Error al registrar Service Worker:', error);
       });
   });
 }//el 3 aca es por el localhost en el servidor es EntreAlasOrderManager
@@ -83,7 +81,7 @@ function generarNuevoPedido() {
   const ahora = new Date();
   const mes = (ahora.getMonth() + 1).toString().padStart(2, '0');
   const año = ahora.getFullYear().toString().slice(-2);
-  
+
   // Generar un código único que no se haya usado este mes
   const codigo = generarCodigoUnico(mes, año);
   document.getElementById('pedido-codigo').textContent = codigo;
@@ -112,33 +110,33 @@ function generarCodigoUnico(mes, año) {
   // Obtener o inicializar el registro de códigos usados
   const registroCodigosKey = `codigosUsados-${mes}${año}`;
   let codigosUsados = JSON.parse(localStorage.getItem(registroCodigosKey)) || [];
-  
+
   // Intentar con 3 dígitos primero (000-999)
   let intentos = 0;
   let codigoGenerado;
   let sufijo = '';
-  
+
   while (intentos < 1000) { // Límite para evitar bucles infinitos
     // Generar número aleatorio
     const random = Math.floor(Math.random() * 1000); // 0-999
     const randomStr = random.toString().padStart(3, '0');
-    
+
     // Formar el código completo
     codigoGenerado = `EA-${mes}${año}-${randomStr}${sufijo}`;
-    
+
     // Verificar si ya existe
     const existeEnHistorial = verificarCodigoEnHistorial(codigoGenerado);
     const yaUsado = codigosUsados.includes(codigoGenerado);
-    
+
     if (!existeEnHistorial && !yaUsado) {
       // Guardar el código usado
       codigosUsados.push(codigoGenerado);
       localStorage.setItem(registroCodigosKey, JSON.stringify(codigosUsados));
       return codigoGenerado;
     }
-    
+
     intentos++;
-    
+
     // Si hemos intentado muchos números y no encontramos uno libre,
     // agregar un sufijo de 1 dígito (0-9) para tener 4 dígitos en total
     if (intentos === 1000 && sufijo === '') {
@@ -146,7 +144,7 @@ function generarCodigoUnico(mes, año) {
       intentos = 0; // Resetear contador para nuevos intentos con sufijo
     }
   }
-  
+
   // Si falla todo, usar timestamp como último recurso
   return `EA-${mes}${año}-${Date.now().toString().slice(-4)}`;
 }
@@ -875,7 +873,7 @@ function mostrarModalPedidoEspecial() {
   document.getElementById('guardar-especial').addEventListener('click', guardarPedidoEspecial);
 
   document.querySelectorAll('input[name="tipo-gramaje"]').forEach(radio => {
-    radio.addEventListener('change', function() {
+    radio.addEventListener('change', function () {
       actualizarUnidadesEnTodos();
       actualizarPreviewEspecial();
     });
@@ -920,18 +918,18 @@ function agregarNuevaCombinacion() {
   const nuevoItem = container.querySelector(`[data-id="${comboId}"]`);
 
   // Event listeners
-  nuevoItem.querySelector('.producto-base').addEventListener('change', function() {
+  nuevoItem.querySelector('.producto-base').addEventListener('change', function () {
     actualizarUnidades(this);
     actualizarPrecioCombinacion(this.closest('.combinacion-item'));
     actualizarPreviewEspecial();
   });
 
-  nuevoItem.querySelector('.cantidad').addEventListener('input', function() {
+  nuevoItem.querySelector('.cantidad').addEventListener('input', function () {
     actualizarPrecioCombinacion(this.closest('.combinacion-item'));
     actualizarPreviewEspecial();
   });
 
-  nuevoItem.querySelector('.btn-eliminar-combo').addEventListener('click', function() {
+  nuevoItem.querySelector('.btn-eliminar-combo').addEventListener('click', function () {
     container.removeChild(nuevoItem);
     actualizarPreviewEspecial();
   });
@@ -967,7 +965,7 @@ function actualizarPrecioCombinacion(comboItem) {
     precio = cantidad * PRECIOS.ALITA_POR_PIEZA;
   } else {
     const tipoGramaje = document.querySelector('input[name="tipo-gramaje"]:checked').value;
-    precio = tipoGramaje === 'gramos' 
+    precio = tipoGramaje === 'gramos'
       ? cantidad * PRECIOS.BONELESS_POR_GRAMO
       : cantidad * PRECIOS.BONELESS_POR_PIEZA;
   }
@@ -1015,7 +1013,7 @@ function actualizarPreviewEspecial() {
 
 function guardarPedidoEspecial() {
   const items = document.querySelectorAll('.combinacion-item');
-  
+
   if (items.length === 0) {
     mostrarNotificacion('Por favor agrega al menos una combinación', 'warning');
     return;

@@ -1,14 +1,13 @@
-// ===== CONFIGURACIÓN PRINCIPAL ===== //
-const APP_PREFIX = '/EntreAlasOrderManager';
+const APP_PREFIX = self.location.host.includes('localhost') ? '' : '/EntreAlasOrderManager';
 const CACHE_NAME = 'entrealas-app-v2';
 const OFFLINE_FALLBACK = `${APP_PREFIX}/index.html`;
 const IMAGE_CACHE = 'entrealas-images-v1';
 const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB
 
-// ===== URLs PARA CACHEAR ===== //
 const urlsToCache = [
   `${APP_PREFIX}/`,
   `${APP_PREFIX}/index.html`,
+  `${APP_PREFIX}/manifest.json`,
   `${APP_PREFIX}/css/styles.css`,
   `${APP_PREFIX}/libs/chart.js`,
   `${APP_PREFIX}/js/app.js`,
@@ -63,44 +62,43 @@ self.addEventListener('activate', (event) => {
 // ===== ESTRATEGIA DE FETCH ===== //
 self.addEventListener('fetch', (event) => {
   const request = event.request;
-  
-  // 1. Ignorar solicitudes no-GET
   if (request.method !== 'GET') {
     return;
   }
 
-  // 2. Manejo especial para imágenes
   if (request.url.match(/\.(jpg|jpeg|png|gif|webp|svg)$/)) {
     event.respondWith(handleImageRequest(request));
     return;
   }
 
-  // 3. Estrategia Cache First con Network Fallback
+  // Normalizar URLs con parámetros para solicitudes HTML
+  let cacheKey = request.url;
+  if (request.headers.get('accept').includes('text/html')) {
+    const url = new URL(request.url);
+    if (url.pathname === `${APP_PREFIX}/index.html`) {
+      cacheKey = `${APP_PREFIX}/index.html`;
+    }
+  }
+
   event.respondWith(
-    caches.match(request)
+    caches.match(cacheKey)
       .then((cachedResponse) => {
-        // Devuelve caché si existe
         if (cachedResponse) {
-          console.log(`[Service Worker] Sirviendo desde caché: ${request.url}`);
+          console.log(`[Service Worker] Sirviendo desde caché: ${cacheKey}`);
           return cachedResponse;
         }
 
-        // Si no está en caché, busca en red
         return fetch(request)
           .then((networkResponse) => {
-            // Clona la respuesta para guardar en caché
             const responseToCache = networkResponse.clone();
-            
             caches.open(CACHE_NAME)
               .then((cache) => {
                 console.log(`[Service Worker] Guardando en caché: ${request.url}`);
                 cache.put(request, responseToCache);
               });
-
             return networkResponse;
           })
           .catch(() => {
-            // Fallback offline
             if (request.headers.get('accept').includes('text/html')) {
               return caches.match(OFFLINE_FALLBACK);
             }

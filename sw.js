@@ -1,5 +1,5 @@
 // ===== CONFIGURACIÓN PRINCIPAL ===== //
-const APP_PREFIX = window.location.host.includes('localhost') ? '/3' : '/EntreAlasOrderManager';
+const APP_PREFIX = '/EntreAlasOrderManager';
 const CACHE_NAME = 'entrealas-app-v2';
 const OFFLINE_FALLBACK = `${APP_PREFIX}/index.html`;
 const IMAGE_CACHE = 'entrealas-images-v1';

@@ -1,7 +1,7 @@
 // Versión del cache
 const CACHE_NAME = 'entrealas-app-v1';
 const urlsToCache = [
-  '/', // Página principal
+  'EntreAlasOrderManager/', // Página principal
   '/EntreAlasOrderManager/index.html',
   '/EntreAlasOrderManager/css/styles.css',
   '/EntreAlasOrderManager/libs/chart.js', // Asegúrate de tener Chart.js localmente

@@ -9,11 +9,12 @@ if ('serviceWorker' in navigator) {
           const newWorker = registration.installing;
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              console.log('Nueva versión del Service Worker detectada, activando automáticamente...');
-              // Envía el mensaje para saltar la espera y activa el nuevo Service Worker
+              console.log('Nueva versión detectada, recargando automáticamente...');
               newWorker.postMessage('skipWaiting');
-              // Recarga la página automáticamente para aplicar la nueva versión
-              window.location.reload();
+              // Forzar recarga completa
+              setTimeout(() => {
+                window.location.href = window.location.href; // Alternativa a reload(true)
+              }, 1000); // Pequeño retraso para asegurar que skipWaiting se procese
             }
           });
         });
@@ -31,7 +32,6 @@ window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPrompt = e;
 
-  // Muestra tu botón personalizado para instalar la PWA
   const installButton = document.getElementById('install-button');
   installButton.style.display = 'block';
 

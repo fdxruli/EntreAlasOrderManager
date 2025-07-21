@@ -1,55 +1,55 @@
 // Configuración y constantes
-let chartType = 'bar';
-const META_MENSUAL = 6000;
+deje que chartType = 'barra';
+constante META_MENSUAL = 6000;
 const META_SEMANAL = META_MENSUAL / 4; // Asumimos 4 semanas por mes
 let tipoMetaActual = 'mensual'; // 'mensual' o 'semanal'
-let metaEventListenerAdded = false;
+deje que metaEventListenerAdded = falso;
 
 // Agregar al inicio del archivo JS, después de las otras constantes
-const GASTOS_TIPOS = [
+constante GASTOS_TIPOS = [
     { nombre: 'Sueldos', categoria: 'externo' },
-    { nombre: 'Renta', categoria: 'externo' },
-    { nombre: 'Servicios', categoria: 'externo' },
-    { nombre: 'Insumos', categoria: 'inventario' }, // Inventory-related
-    { nombre: 'Mantenimiento', categoria: 'externo' },
-    { nombre: 'Publicidad', categoria: 'externo' },
+    { nombre: 'Renta', categoría: 'externo' },
+    { nombre: 'Servicios', categoría: 'externo' },
+    { nombre: 'Insumos', categoria: 'inventario' }, // Relacionado con el inventario
+    { nombre: 'Mantenimiento', categoría: 'externo' },
+    { nombre: 'Publicidad', categoría: 'externo' },
     { nombre: 'Impuestos', categoria: 'externo' },
-    { nombre: 'Otros', categoria: 'externo' }
+    { nombre: 'Otros', categoría: 'externo' }
 ];
 
-const GASTOS_IDS = {
+constante GASTOS_IDS = {
     FORMULARIO_GASTO: 'formulario-gasto',
     FECHA_GASTO: 'fecha-gasto',
     MONTO_GASTO: 'monto-gasto',
     TIPO_GASTO: 'tipo-gasto',
     DESCRIPCION_GASTO: 'descripcion-gasto',
     TABLA_GASTOS: 'tabla-gastos',
-    TOTAL_GASTOS: 'total-gastos',
+    TOTAL_GASTOS: 'gastos-totales',
     GRAFICO_GASTOS: 'grafico-gastos',
     RESUMEN_GASTOS: 'resumen-gastos'
 };
 
 // Configuración de costos de productos
-const COSTOS_PRODUCTOS = {
+constante COSTOS_PRODUCTOS = {
     'alitas': { costo: 55, precio: 75 },
-    'boneless': { costo: 45, precio: 70 },
+    'deshuesado': { costo: 45, precio: 70 },
     'papas': { costo: 15, precio: 35 },
     'envio': { costo: 0, precio: 0 } // Costo dinámico que se actualizará
 };
 
-const METAS_CONFIG = {
+constante METAS_CONFIG = {
     mensual: {
-        metaVentas: 6000,       // Meta de ventas brutas
-        metaGanancias: 3000,    // Meta de ganancias netas (50% de las ventas como ejemplo)
-        label: 'Mensual',
+        metaVentas: 6000, // Meta de ventas brutas
+        metaGanancias: 3000, // Meta de ganancias netas (50% de las ventas como ejemplo)
+        etiqueta: 'Mensual',
         colorCompleto: '#4CAF50',
         colorProgreso: '#8BC34A',
         colorFaltante: '#FF5722'
     },
     semanal: {
-        metaVentas: 1500,       // Meta de ventas brutas
-        metaGanancias: 750,      // Meta de ganancias netas
-        label: 'Semanal',
+        metaVentas: 1500, // Meta de ventas brutas
+        metaGanancias: 750, // Meta de ganancias netas
+        etiqueta: 'Semanal',
         colorCompleto: '#2196F3',
         colorProgreso: '#64B5F6',
         colorFaltante: '#FF9800'
@@ -57,9 +57,9 @@ const METAS_CONFIG = {
 };
 
 // Nuevos IDs para elementos de costos
-const COSTOS_IDS = {
-    TOTAL_COSTOS: 'total-costos',
-    TOTAL_GANANCIAS: 'total-ganancias',
+constante COSTOS_IDS = {
+    TOTAL_COSTOS: 'costo-total',
+    TOTAL_GANANCIAS: 'ganancias-totales',
     MARGEN_GANANCIAS: 'margen-ganancias',
     TABLA_PRODUCTOS_COSTOS: 'tabla-productos-costos',
     UTILIDAD_NETA: 'utilidad-neta',
@@ -71,28 +71,28 @@ function obtenerCostoProducto(nombreProducto) {
     const nombre = nombreProducto.toLowerCase();
 
     // Buscar coincidencias en el nombre del producto
-    for (const [key, datos] of Object.entries(COSTOS_PRODUCTOS)) {
-        if (nombre.includes(key)) {
-            return datos;
+    para (const [clave, datos] de Object.entries(COSTOS_PRODUCTOS)) {
+        si (nombre.incluye(clave)) {
+            devolver datos;
         }
     }
 
-    // Si no se encuentra, retornar valores por defecto
+    // Si no se encuentra, retornará valores por defecto
     return { costo: 0, precio: 0 };
 }
 
-// Función MODIFICADA para actualizar el dashboard principal
-function actualizarDashboard() {
+// Función MODIFICADA para actualizar el tablero principal
+función actualizarDashboard() {
     const desde = obtenerElemento(IDS.FILTRO_DESDE)?.value;
     const hasta = obtenerElemento(IDS.FILTRO_HASTA)?.value;
     const topLimitElement = obtenerElemento(IDS.FILTRO_TOP);
-    const topLimit = topLimitElement ? parseInt(topLimitElement.value) : 10;
+    const límite superior = elemento límite superior? parseInt(topLimitElement.valor): 10;
 
-    if (!desde || !hasta) {
+    si (!desde || !hasta) {
         return mostrarNotificacion('Por favor selecciona ambas fechas', 'warning');
     }
 
-    if (new Date(desde) > new Date(hasta)) {
+    if (nueva Fecha(desde) > nueva Fecha(hasta)) {
         return mostrarNotificacion('La fecha desde no puede ser mayor a la fecha hasta', 'error');
     }
 
@@ -102,29 +102,29 @@ function actualizarDashboard() {
         return fechaPedido >= desde && fechaPedido <= hasta;
     });
 
-    const totalVentas = pedidosFiltrados.reduce((sum, p) => sum + (p.total || 0), 0);
+    const totalVentas = pedidosFiltrados.reduce((suma, p) => suma + (p.total || 0), 0);
     const totalPedidos = pedidosFiltrados.length;
-    const ticketPromedio = totalPedidos > 0 ? (totalVentas / totalPedidos) : 0;
+    const ticketPromedio = totalPedidos > 0 ? (totalVentas / totalPedidos): 0;
     const totalDescuentos = calcularTotalDescuentos(pedidosFiltrados);
     
-    const {
+    constante {
         topProductos,
         totalProductosVendidos,
-        totalCostos,
+        Costos totales,
         totalGanancias,
         margenGananciasGeneral,
         totalEnvios,
-        gananciasEnvios
+        GananciasEnvíos
     } = calcularProductosConCostos(pedidosFiltrados, topLimit);
 
     const { totalGastosExternos, totalGastosInventario } = actualizarResumenGastos();
     
-    // NUEVA LÓGICA: Calcular utilidad neta considerando gastos de inventario
+    // NUEVA LÍGICA: Calcular utilidad neta considerando gastos de inventario
     let utilidadNeta = totalGanancias - totalGastosExternos;
-    let excesoInventario = 0;
-    if (totalGastosInventario > totalCostos) {
+    deje excesoInventario = 0;
+    si (totalGastosInventario > totalCostos) {
         excesoInventario = totalGastosInventario - totalCostos;
-        utilidadNeta -= excesoInventario; // Restar solo el exceso de inventario
+        utilidadNeta -= excesoInventario; // Restablecer solo el exceso de inventario
     }
     // Dinero en caja sigue igual: total ventas menos todos los gastos
     const dineroCaja = totalVentas - totalGastosExternos - totalGastosInventario;
@@ -135,38 +135,38 @@ function actualizarDashboard() {
         ticketPromedio,
         totalDescuentos,
         totalProductosVendidos,
-        totalCostos,
+        Costos totales,
         totalGanancias,
         margenGananciasGeneral,
         totalGastosExternos,
         utilidadNeta,
         totalEnvios,
-        gananciasEnvios,
+        GananciasEnvios,
         totalGastosInventario,
         dineroCaja,
         excesoInventario // Nueva métrica para mostrar el exceso
     );
 
-    actualizarTablaProductos(topProductos, totalVentas);
-    actualizarGraficoVentas(pedidosFiltrados, desde, hasta);
+    TablaProductos(topActualizarProductos, totalVentas);
+    GraficoVentas(pedidos actualizarFiltrados, desde, hasta);
     actualizarGraficoPie(topProductos);
     recalcularMetaDesdeCero();
 }
 
 // Función MODIFICADA para actualizar elementos UI
-function actualizarElementosUIConCostos(
-    totalVentas, 
-    totalPedidos, 
-    ticketPromedio, 
+función actualizarElementosUIConCostos(
+    totalVentas,
+    totalPedidos,
+    ticketPromedio,
     totalDescuentos,
     totalProductosVendidos,
-    totalCostos,
+    Costos totales,
     totalGanancias,
     margenGanancias,
     totalGastosExternos,
     utilidadNeta,
     totalEnvios = 0,
-    gananciasEnvios = 0,
+    GananciasEnvios = 0,
     totalGastosInventario = 0,
     dineroCaja = 0,
     excesoInventario = 0 // Nueva métrica
@@ -176,7 +176,7 @@ function actualizarElementosUIConCostos(
     ticketPromedio = asegurarNumero(ticketPromedio);
     totalDescuentos = asegurarNumero(totalDescuentos);
     totalProductosVendidos = asegurarNumero(totalProductosVendidos);
-    totalCostos = asegurarNumero(totalCostos);
+    Costostotal = asegurarNumero(Costostotal);
     totalGanancias = asegurarNumero(totalGanancias);
     margenGanancias = asegurarNumero(margenGanancias);
     totalGastosExternos = asegurarNumero(totalGastosExternos);
@@ -194,7 +194,7 @@ function actualizarElementosUIConCostos(
     if (pedidosElement) pedidosElement.textContent = totalPedidos.toLocaleString();
 
     const ticketElement = document.getElementById('ticket-promedio');
-    if (ticketElement) ticketElement.textContent = formatearMoneda(ticketPromedio);
+    if (elementoTicket) elementoTicket.textContent = formatearMoneda(elementoTicketPromedio);
 
     const descuentosElement = document.getElementById('total-descuentos');
     if (descuentosElement) descuentosElement.textContent = formatearMoneda(totalDescuentos);
@@ -209,7 +209,7 @@ function actualizarElementosUIConCostos(
     if (gananciasElement) gananciasElement.textContent = formatearMoneda(totalGanancias);
 
     const margenElement = document.getElementById('margen-ganancias');
-    if (margenElement) margenElement.textContent = `${margenGanancias.toFixed(1)}%`;
+    si (margenElement) margenElement.textContent = `${margenGanancias.toFixed(1)}%`;
 
     const gastosExternosElement = document.getElementById('total-gastos-externos');
     if (gastosExternosElement) gastosExternosElement.textContent = formatearMoneda(totalGastosExternos);
@@ -218,118 +218,118 @@ function actualizarElementosUIConCostos(
     if (gastosInventarioElement) gastosInventarioElement.textContent = formatearMoneda(totalGastosInventario);
 
     const utilidadElement = document.getElementById('utilidad-neta');
-    if (utilidadElement) {
+    si (elementoutilidad) {
         utilidadElement.textContent = formatearMoneda(utilidadNeta);
-        utilidadElement.className = utilidadNeta >= 0 ? 'metric-value positive' : 'metric-value negative';
+        utilidadElement.className = utilidadNeta >= 0 ? 'valor-métrico positivo' : 'valor-métrico negativo';
     }
 
-    const enviosElement = document.getElementById('total-envios');
-    if (enviosElement) enviosElement.textContent = formatearMoneda(totalEnvios);
+    const envíosElement = document.getElementById('total-envios');
+    if (enviosElement) envíosElement.textContent = formatearMoneda(totalEnvios);
 
     const gananciasEnviosElement = document.getElementById('ganancias-envios');
     if (gananciasEnviosElement) gananciasEnviosElement.textContent = formatearMoneda(gananciasEnvios);
 
     const dineroCajaElement = document.getElementById('dinero-caja');
-    if (dineroCajaElement) {
+    si (dineroCajaElement) {
         dineroCajaElement.textContent = formatearMoneda(dineroCaja);
-        dineroCajaElement.className = dineroCaja >= 0 ? 'metric-value positive' : 'metric-value negative';
+        dineroCajaElement.className = dineroCaja >= 0 ? 'valor-métrico positivo' : 'valor-métrico negativo';
     }
 
     // NUEVO: Mostrar exceso de inventario si existe
     const excesoInventarioElement = document.getElementById('exceso-inventario');
-    if (excesoInventarioElement) {
+    si (excesoInventarioElement) {
         excesoInventarioElement.textContent = formatearMoneda(excesoInventario);
-        excesoInventarioElement.className = excesoInventario > 0 ? 'metric-value negative' : 'metric-value';
+        excesoInventarioElement.className = excesoInventario > 0 ? 'metric-value negativo' : 'metric-value';
     }
 }
 
-function obtenerGastos() {
-    try {
+función obtenerGastos() {
+    intentar {
         const gastos = JSON.parse(localStorage.getItem('gastos')) || [];
-        console.log('Gastos cargados:', gastos); // Debug log
-        return gastos;
-    } catch (error) {
+        console.log('Gastos cargados:', gastos); // registro de depuración
+        devolver gastos;
+    } captura (error) {
         console.error('Error al leer gastos desde localStorage:', error);
         mostrarNotificacion('Error al cargar los datos de gastos', 'error');
-        return [];
+        devolver [];
     }
 }
 
 function guardarGastos(gastos) {
-    try {
+    intentar {
         localStorage.setItem('gastos', JSON.stringify(gastos));
-        console.log('Gastos guardados:', gastos); // Debug log
-    } catch (error) {
+        console.log('Gastos guardados:', gastos); // registro de depuración
+    } captura (error) {
         console.error('Error al guardar gastos en localStorage:', error);
         mostrarNotificacion('Error al guardar los datos de gastos', 'error');
     }
 }
 
 // Función para agregar un nuevo gasto
-function agregarGasto(event) {
-    event.preventDefault();
+función agregarGasto(evento) {
+    evento.preventDefault();
 
-    console.log('Iniciando agregarGasto'); // Debug log
+    console.log('Iniciando agregarGasto'); // registro de depuración
 
     const fecha = obtenerElemento(GASTOS_IDS.FECHA_GASTO)?.value;
     const monto = parseFloat(obtenerElemento(GASTOS_IDS.MONTO_GASTO)?.value);
     const tipo = obtenerElemento(GASTOS_IDS.TIPO_GASTO)?.value;
     const descripcion = obtenerElemento(GASTOS_IDS.DESCRIPCION_GASTO)?.value;
 
-    // Validate inputs
-    if (!fecha) {
+    // Validar entradas
+    si (!fecha) {
         mostrarNotificacion('Por favor selecciona una fecha válida', 'warning');
         console.error('Fecha no válida:', fecha);
-        return;
+        devolver;
     }
     if (isNaN(monto) || monto <= 0) {
         mostrarNotificacion('Por favor ingresa un monto válido mayor a 0', 'warning');
         console.error('Monto no válido:', monto);
-        return;
+        devolver;
     }
-    if (!tipo) {
+    si (!tipo) {
         mostrarNotificacion('Por favor selecciona un tipo de gasto', 'warning');
         console.error('Tipo no seleccionado:', tipo);
-        return;
+        devolver;
     }
 
     const tipoConfig = GASTOS_TIPOS.find(t => t.nombre === tipo);
-    if (!tipoConfig) {
+    si (!tipoConfig) {
         mostrarNotificacion('Tipo de gasto no válido', 'error');
         console.error('Tipo de gasto no encontrado en GASTOS_TIPOS:', tipo);
-        return;
+        devolver;
     }
 
     const gastos = obtenerGastos();
-    const nuevoGasto = {
-        id: Date.now(),
+    constante nuevoGasto = {
+        id: Fecha.ahora(),
         fecha,
         monto,
         tipo,
-        categoria: tipoConfig.categoria,
-        descripcion: descripcion || '',
-        fechaRegistro: new Date().toISOString()
+        categoría: tipoConfig.categoria,
+        descripción: descripción || '',
+        fechaRegistro: nueva Fecha().toISOString()
     };
 
-    try {
+    intentar {
         gastos.push(nuevoGasto);
         guardarGastos(gastos);
-        mostrarNotificacion('Gasto registrado correctamente', 'success');
+        mostrarNotificacion('Gasto registrado correctamente', 'éxito');
         console.log('Gasto agregado:', nuevoGasto);
 
-        // Reset form
+        // Restablecer formulario
         const formulario = obtenerElemento(GASTOS_IDS.FORMULARIO_GASTO);
-        if (formulario) {
+        si (formulario) {
             formulario.reset();
             const categoriaGastoInput = obtenerElemento('categoria-gasto');
-            if (categoriaGastoInput) categoriaGastoInput.value = '';
+            si (categoriaGastoInput) categoriaGastoInput.valor = '';
         }
 
-        // Update UI
+        // Actualizar la interfaz de usuario
         actualizarTablaGastos();
         actualizarResumenGastos();
         actualizarDashboard();
-    } catch (error) {
+    } captura (error) {
         console.error('Error al agregar gasto:', error);
         mostrarNotificacion('Error al registrar el gasto', 'error');
     }
@@ -340,28 +340,28 @@ function filtrarGastos(desde, hasta) {
     const gastos = obtenerGastos();
 
     return gastos.filter(gasto => {
-        const fechaGasto = new Date(gasto.fecha).toISOString().split('T')[0];
+        const fechaGasto = new Fecha(gasto.fecha).toISOString().split('T')[0];
         return (!desde || fechaGasto >= desde) && (!hasta || fechaGasto <= hasta);
     });
 }
 
 // Función para eliminar un gasto
-function eliminarGasto(id) {
+función eliminarGasto(id) {
     if (!confirm('¿Estás seguro de eliminar este gasto?')) return;
 
     const gastos = obtenerGastos().filter(gasto => gasto.id !== id);
     guardarGastos(gastos);
 
-    mostrarNotificacion('Gasto eliminado correctamente', 'success');
+    mostrarNotificacion('Gasto eliminado correctamente', 'éxito');
     actualizarTablaGastos();
     actualizarResumenGastos();
     actualizarDashboard();
 }
 
 // Función para actualizar la tabla de gastos
-function actualizarTablaGastos() {
+función actualizarTablaGastos() {
     const tbody = obtenerElemento(GASTOS_IDS.TABLA_GASTOS);
-    if (!tbody) return;
+    si (!tbody) retorna;
 
     const desde = obtenerElemento(IDS.FILTRO_DESDE)?.value;
     const hasta = obtenerElemento(IDS.FILTRO_HASTA)?.value;
@@ -369,47 +369,47 @@ function actualizarTablaGastos() {
 
     tbody.innerHTML = '';
 
-    if (gastosFiltrados.length === 0) {
+    si (gastosFiltrados.length === 0) {
         tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay gastos registrados</td></tr>';
-        return;
+        devolver;
     }
 
-    gastosFiltrados.sort((a, b) => new Date(b.fecha) - new Date(a.fecha)).forEach(gasto => {
-        const row = document.createElement('tr');
-        row.classList.add(`${gasto.categoria}-row`);
-        row.innerHTML = `
-            <td>${new Date(gasto.fecha).toLocaleDateString('es-ES')}</td>
+    gastosFiltrados.sort((a, b) => nueva Fecha(b.fecha) - nueva Fecha(a.fecha)).forEach(gasto => {
+        constante fila = document.createElement('tr');
+        fila.classList.add(`${gasto.categoria}-fila`);
+        fila.innerHTML = `
+            <td>${nueva Fecha(gasto.fecha).toLocaleDateString('es-ES')}</td>
             <td>${gasto.tipo}</td>
             <td>${gasto.categoria.charAt(0).toUpperCase() + gasto.categoria.slice(1)}</td>
             <td class="text-right">${formatearMoneda(gasto.monto)}</td>
             <td>${gasto.descripcion || '-'}</td>
-            <td>${new Date(gasto.fechaRegistro).toLocaleString('es-ES')}</td>
+            <td>${nueva Fecha(gasto.fechaRegistro).toLocaleString('es-ES')}</td>
             <td class="text-center">
-                <button class="btn btn-sm btn-danger" onclick="eliminarGasto(${gasto.id})">
+                <botón class="btn btn-sm btn-peligro" onclick="eliminarGasto(${gasto.id})">
                     <i class="fas fa-trash"></i>
-                </button>
+                </botón>
             </td>
         `;
-        tbody.appendChild(row);
+        tbody.appendChild(fila);
     });
 }
 
 // Función para actualizar el resumen de gastos
-function actualizarResumenGastos() {
+función actualizarResumenGastos() {
     const desde = obtenerElemento(IDS.FILTRO_DESDE)?.value;
     const hasta = obtenerElemento(IDS.FILTRO_HASTA)?.value;
     const gastosFiltrados = filtrarGastos(desde, hasta);
 
     const totalGastosExternos = gastosFiltrados
         .filter(gasto => gasto.categoria === 'externo')
-        .reduce((sum, gasto) => sum + gasto.monto, 0);
+        .reduce((suma, gasto) => suma + gasto.monto, 0);
 
     const totalGastosInventario = gastosFiltrados
         .filter(gasto => gasto.categoria === 'inventario')
-        .reduce((sum, gasto) => sum + gasto.monto, 0);
+        .reduce((suma, gasto) => suma + gasto.monto, 0);
 
     const elementoTotalGastosExternos = obtenerElemento('total-gastos-externos');
-    if (elementoTotalGastosExternos) {
+    si (elementoTotalGastosExternos) {
         elementoTotalGastosExternos.textContent = formatearMoneda(totalGastosExternos);
     }
 
@@ -418,17 +418,17 @@ function actualizarResumenGastos() {
         elementoTotalGastosInventario.textContent = formatearMoneda(totalGastosInventario);
     }
 
-    actualizarGraficoGastos(gastosFiltrados);
-    return { totalGastosExternos, totalGastosInventario };
+    GraficoGastos(gas actualizartosFiltrados);
+    retorna { totalGastosExternos, totalGastosInventario };
 }
 
 // Función para actualizar el gráfico de gastos
 function actualizarGraficoGastos(gastos) {
     const canvas = obtenerElemento(GASTOS_IDS.GRAFICO_GASTOS);
-    if (!canvas) return;
+    si (!canvas) retorna;
 
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    si (!ctx) retorna;
 
     const gastosPorTipoYCategoria = {};
     GASTOS_TIPOS.forEach(tipo => {
@@ -439,103 +439,103 @@ function actualizarGraficoGastos(gastos) {
         gastosPorTipoYCategoria[gasto.tipo][gasto.categoria] += gasto.monto;
     });
 
-    const labels = [];
+    const etiquetas = [];
     const datosExternos = [];
     const datosInventario = [];
 
     GASTOS_TIPOS.forEach(tipo => {
         if (gastosPorTipoYCategoria[tipo.nombre].externo > 0) {
-            labels.push(`${tipo.nombre} (Externo)`);
+            etiquetas.push(`${tipo.nombre} (Externo)`);
             datosExternos.push(gastosPorTipoYCategoria[tipo.nombre].externo);
             datosInventario.push(0);
         }
         if (gastosPorTipoYCategoria[tipo.nombre].inventario > 0) {
-            labels.push(`${tipo.nombre} (Inventario)`);
+            etiquetas.push(`${tipo.nombre} (Inventario)`);
             datosExternos.push(0);
             datosInventario.push(gastosPorTipoYCategoria[tipo.nombre].inventario);
         }
     });
 
-    if (window.graficoGastos) {
-        window.graficoGastos.destroy();
+    si (ventana.graficoGastos) {
+        ventana.graficoGastos.destroy();
     }
 
-    if (labels.length === 0) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    si (etiquetas.longitud === 0) {
+        ctx.clearRect(0, 0, lienzo.ancho, lienzo.alto);
         ctx.fillStyle = '#666';
-        ctx.textAlign = 'center';
+        ctx.textAlign = 'centro';
         ctx.font = '16px Arial';
         ctx.fillText('No hay gastos para mostrar', canvas.width / 2, canvas.height / 2);
-        return;
+        devolver;
     }
 
-    try {
-        window.graficoGastos = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [
+    intentar {
+        ventana.graficoGastos = new Chart(ctx, {
+            tipo: 'barra',
+            datos: {
+                etiquetas: etiquetas,
+                conjuntos de datos: [
                     {
-                        label: 'Gastos Externos',
-                        data: datosExternos,
-                        backgroundColor: '#FF6384',
-                        borderWidth: 1
+                        etiqueta: 'Gastos Externos',
+                        datos: datosExternos,
+                        color de fondo: '#FF6384',
+                        Ancho del borde: 1
                     },
                     {
-                        label: 'Gastos de Inventario',
-                        data: datosInventario,
-                        backgroundColor: '#36A2EB',
-                        borderWidth: 1
+                        etiqueta: 'Gastos de Inventario',
+                        datos: datosInventario,
+                        color de fondo: '#36A2EB',
+                        Ancho del borde: 1
                     }
                 ]
             },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'top'
+            opciones: {
+                responsivo: verdadero,
+                complementos: {
+                    leyenda: {
+                        posición: 'arriba'
                     },
-                    tooltip: {
-                        callbacks: {
-                            label: function (context) {
-                                return `${context.dataset.label}: ${formatearMoneda(context.raw)}`;
+                    información sobre herramientas: {
+                        devoluciones de llamada: {
+                            etiqueta: función (contexto) {
+                                devuelve `${context.dataset.label}: ${formatearMoneda(context.raw)}`;
                             }
                         }
                     }
                 },
-                scales: {
+                escalas: {
                     x: {
-                        stacked: true
+                        apilado: verdadero
                     },
                     y: {
-                        stacked: true,
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Monto ($)'
+                        apilado: verdadero,
+                        beginAtZero: verdadero,
+                        título: {
+                            visualización: verdadero,
+                            texto: 'Monto ($)'
                         },
-                        ticks: {
-                            callback: function (value) {
-                                return formatearMoneda(value);
+                        garrapatas: {
+                            devolución de llamada: función (valor) {
+                                retorna formatearMoneda(valor);
                             }
                         }
                     }
                 }
             }
         });
-    } catch (error) {
+    } captura (error) {
         console.error('Error al crear gráfico de gastos:', error);
     }
 }
 
 function asegurarNumero(valor, defecto = 0) {
-    const num = parseFloat(valor);
-    return isNaN(num) ? defecto : num;
+    número constante = parseFloat(valor);
+    devolver esNaN(núm)? defecto: número;
 }
 
-// Constantes para IDs de elementos DOM
-const IDS = {
-    MODAL: 'dashboard-modal',
+// Constantes para ID de elementos DOM
+constante IDS = {
+    MODAL: 'tablero-modal',
     FILTRO_DESDE: 'filtro-fecha-desde',
     FILTRO_HASTA: 'filtro-fecha-hasta',
     FILTRO_TOP: 'filtro-top-productos',
@@ -543,39 +543,39 @@ const IDS = {
     BTN_APLICAR: 'btn-aplicar-filtros',
     BTN_CAMBIAR_GRAFICO: 'btn-cambiar-grafico',
     CLOSE_MODAL: '.close-modal',
-    TOTAL_VENTAS: 'total-ventas',
-    TOTAL_PEDIDOS: 'total-pedidos',
+    TOTAL_VENTAS: 'ventas-totales',
+    TOTAL_PEDIDOS: 'pedidos-totales',
     TOTAL_DESCUENTOS: 'total-descuentos',
     TOTAL_PRODUCTOS: 'total-productos-vendidos',
-    TICKET_PROMEDIO: 'ticket-promedio',
+    TICKET_PROMEDIO: 'boleto-promedio',
     TABLA_PRODUCTOS: 'tabla-top-productos',
-    VENTAS_CHART: 'ventas-chart',
+    VENTAS_CHART: 'gráfico-de-ventas',
     PIE_CHART: 'chart-pie-productos',
-    META_CONTAINER_MENSUAL: 'meta-mensual-container',
-    META_CONTAINER_SEMANAL: 'meta-semanal-container'
+    META_CONTAINER_MENSUAL: 'contenedor-meta-mensual',
+    META_CONTAINER_SEMANAL: 'contenedor-meta-semanal'
 };
 
 // Funciones de utilidad
-function obtenerPedidos() {
-    try {
+función obtenerPedidos() {
+    intentar {
         const pedidos = JSON.parse(localStorage.getItem('pedidos')) || [];
-        return pedidos
+        pedidos de devolución
             .filter(pedido => pedido.estado === 'completado') // Filtrar solo pedidos completados
             .map(pedido => ({
                 ...pedido,
                 costoEnvio: asegurarNumero(pedido.costoEnvio),
                 precioEnvio: asegurarNumero(pedido.precioEnvio || pedido.costoEnvio)
             }));
-    } catch (error) {
+    } captura (error) {
         console.error('Error al leer pedidos:', error);
-        return [];
+        devolver [];
     }
 }
 
 function guardarPedidos(pedidos) {
-    try {
+    intentar {
         localStorage.setItem('pedidos', JSON.stringify(pedidos));
-    } catch (error) {
+    } captura (error) {
         console.error('Error al guardar pedidos en localStorage:', error);
         mostrarNotificacion('Error al guardar los datos', 'error');
     }
@@ -583,37 +583,37 @@ function guardarPedidos(pedidos) {
 
 function obtenerElemento(id) {
     const elemento = document.getElementById(id) || document.querySelector(id);
-    if (!elemento) {
+    si (!elemento) {
         console.warn(`Elemento no encontrado: ${id}`);
     }
-    return elemento;
+    devolver elemento;
 }
 
-function formatearMoneda(valor) {
-    return new Intl.NumberFormat('es-MX', {
-        style: 'currency',
-        currency: 'MXN'
+función formatearMoneda(valor) {
+    devuelve nuevo Intl.NumberFormat('es-MX', {
+        estilo: 'moneda',
+        moneda: 'MXN'
     }).format(valor);
 }
 
 function mostrarNotificacion(mensaje, tipo = 'info') {
-    const notificacion = document.createElement('div');
+    notificación const = document.createElement('div');
     notificacion.className = `notificacion ${tipo}`;
     notificacion.innerHTML = `
-        <span class="notificacion-icono">${{
-            'info': 'ℹ️',
-            'warning': '⚠️',
-            'error': '❌',
-            'success': '✅'
-        }[tipo] || 'ℹ️'}</span>
-        <span class="notificacion-texto">${mensaje}</span>
-        <button class="notificacion-cerrar">×</button>
+        <span class="notificación-icono">${{
+            'información': 'â„¹ï¸ ',
+            'advertencia': 'âš ï¸ ',
+            'error': 'â Œ',
+            'éxito': 'âœ…'
+        }[tipo] || 'â"¹ï¸ '}</span>
+        <span class="notificación-texto">${mensaje}</span>
+        <button class="notificacion-cerrar">Ã—</button>
     `;
 
-    document.body.appendChild(notificacion);
+    document.body.appendChild(notificación);
 
     // Auto-eliminar después de 5 segundos
-    setTimeout(() => {
+    establecerTiempo de espera(() => {
         notificacion.classList.add('desvanecer');
         setTimeout(() => notificacion.remove(), 300);
     }, 5000);
@@ -624,19 +624,19 @@ function mostrarNotificacion(mensaje, tipo = 'info') {
     });
 }
 
-// Función principal para mostrar el dashboard
-function mostrarDashboard() {
+// Función principal para mostrar el tablero
+función mostrarDashboard() {
     const modal = obtenerElemento(IDS.MODAL);
-    if (!modal) {
-        mostrarNotificacion('No se pudo encontrar el modal del dashboard', 'error');
-        return;
+    si (!modal) {
+        mostrarNotificacion('No se pudo encontrar el modal del tablero', 'error');
+        devolver;
     }
 
     modal.style.display = 'flex';
 
     // Configurar fechas por defecto (últimos 30 días)
-    const hoy = new Date();
-    const hace30Dias = new Date();
+    const hoy = nueva Fecha();
+    const hace30Dias = nueva Fecha();
     hace30Dias.setDate(hoy.getDate() - 30);
 
     const filtroDesde = obtenerElemento(IDS.FILTRO_DESDE);
@@ -645,41 +645,41 @@ function mostrarDashboard() {
     if (filtroDesde) filtroDesde.valueAsDate = hace30Dias;
     if (filtroHasta) filtroHasta.valueAsDate = hoy;
 
-    // Configurar event listeners
+    // Configurar oyentes de eventos
     configurarEventListeners();
 
-    // Actualizar dashboard inicial
+    // Actualizar panel inicial
     actualizarDashboard();
 }
 
-function configurarFormularioGastos() {
+función configurarFormularioGastos() {
     const tipoGastoSelect = obtenerElemento(GASTOS_IDS.TIPO_GASTO);
     const categoriaGastoInput = obtenerElemento('categoria-gasto');
 
-    if (tipoGastoSelect && categoriaGastoInput) {
-        // Populate the select options
+    si (tipoGastoSelect && categoriaGastoInput) {
+        // Rellene las opciones de selección
         tipoGastoSelect.innerHTML = `
             <option value="">Seleccionar...</option>
             ${GASTOS_TIPOS.map(tipo => `<option value="${tipo.nombre}">${tipo.nombre}</option>`).join('')}
         `;
 
-        tipoGastoSelect.addEventListener('change', () => {
+        tipoGastoSelect.addEventListener('cambiar', () => {
             const tipoSeleccionado = tipoGastoSelect.value;
             const tipoConfig = GASTOS_TIPOS.find(t => t.nombre === tipoSeleccionado);
             categoriaGastoInput.value = tipoConfig ? tipoConfig.categoria : '';
         });
-    } else {
+    } demás {
         console.error('No se encontraron los elementos del formulario de gastos:', {
-            tipoGastoSelect,
-            categoriaGastoInput
+            tipoGastoSeleccionar,
+            categoríaGastoInput
         });
         mostrarNotificacion('Error al configurar el formulario de gastos', 'error');
     }
 }
 
-function manejarCambioMeta(event) {
+función manejarCambioMeta(evento) {
     // Guardar el nuevo tipo de meta
-    tipoMetaActual = event.target.value;
+    tipoMetaActual = evento.objetivo.valor;
     console.log(`Cambiando a meta ${tipoMetaActual}`);
 
     // Actualizar la interfaz visual
@@ -690,23 +690,23 @@ function manejarCambioMeta(event) {
 }
 
 // 3. Funciones auxiliares para las metas
-function calcularDiasTranscurridos(tipoMeta) {
-    const hoy = new Date();
-    if (tipoMeta === 'semanal') {
+función calcularDiasTranscurridos(tipoMeta) {
+    const hoy = nueva Fecha();
+    si (tipoMeta === 'semanal') {
         return hoy.getDay(); // 0 (domingo) a 6 (sábado)
-    } else {
+    } demás {
         return hoy.getDate(); // Día del mes
     }
 }
 
 function calcularProyeccion(utilidadActual, tipoMeta) {
-    const hoy = new Date();
+    const hoy = nueva Fecha();
     let diasTotales, diasTranscurridos;
     
-    if (tipoMeta === 'semanal') {
+    si (tipoMeta === 'semanal') {
         diasTotales = 7;
         diasTranscurridos = hoy.getDay() || 7; // Si es 0 (domingo), contar como 7
-    } else {
+    } demás {
         diasTotales = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0).getDate();
         diasTranscurridos = hoy.getDate();
     }
@@ -716,39 +716,39 @@ function calcularProyeccion(utilidadActual, tipoMeta) {
 }
 
 function generarConsejosMeta(porcentaje, faltante, tipoMeta) {
-    let consejos = [];
+    deje consejos = [];
     const metaLabel = METAS_CONFIG[tipoMeta].label;
     
-    if (porcentaje >= 100) {
-        consejos.push(`✅ ¡Meta ${metaLabel} alcanzada! Buen trabajo.`);
-        consejos.push(`🔝 Considera aumentar tu meta para el próximo período.`);
+    si (porcentaje >= 100) {
+        consejos.push(`âœ… Â¡Meta ${metaLabel} alcanzada! Buen trabajo.`);
+        consejos.push(`ðŸ” Considera aumentar tu meta para el próximo período.`);
     } else if (porcentaje >= 75) {
-        consejos.push(`👍 Vas por buen camino para alcanzar la meta ${metaLabel}.`);
-        consejos.push(`📈 Necesitas ${formatearMoneda(faltante)} más para llegar a la meta.`);
+        consejos.push(`ðŸ' Vas por buen camino para alcanzar la meta ${metaLabel}.`);
+        consejos.push(`ðŸ“ˆ Necesitas ${formatearMoneda(faltante)} más para llegar a la meta.`);
     } else if (porcentaje >= 50) {
-        consejos.push(`⚠️ Estás a la mitad de la meta ${metaLabel}.`);
-        consejos.push(`💡 Revisa estrategias para incrementar ventas o reducir gastos.`);
-    } else {
-        consejos.push(`😟 Estás por debajo del 50% de la meta ${metaLabel}.`);
-        consejos.push(`🚀 Necesitas ${formatearMoneda(faltante)} más. Considera acciones inmediatas.`);
+        consejos.push(`âš ï¸ Estás la mitad de la meta ${metaLabel}.`);
+        consejos.push(`ðŸ'¡ Revisa estrategias para incrementar ventas o reducir gastos.`);
+    } demás {
+        consejos.push(`ðŸ˜Ÿ Estás por debajo del 50% de la meta ${metaLabel}.`);
+        consejos.push(`ðŸš€ Necesitas ${formatearMoneda(faltante)} más. Considera acciones inmediatas.`);
     }
     
     // Consejo adicional basado en el tiempo restante
-    const hoy = new Date();
+    const hoy = nueva Fecha();
     if (tipoMeta === 'semanal' && hoy.getDay() >= 5) { // Viernes o después
-        consejos.push("⏳ ¡Últimos días de la semana! Enfócate en promociones rápidas.");
+        consejos.push("â ³ ¡Ãšltimos días de la semana! Enfócate en promociones rápidas.");
     } else if (tipoMeta === 'mensual' && hoy.getDate() > 25) {
-        consejos.push("📅 Final de mes cerca. Revisa gastos y oportunidades finales.");
+        consejos.push("ðŸ“… Final de mes cerca. Revisa gastos y oportunidades finales.");
     }
     
-    return consejos.map(c => `<div class="meta-tip">${c}</div>`).join('');
+    devolver consejos.map(c => `<div class="meta-tip">${c}</div>`).join('');
 }
 
-function recalcularMetaDesdeCero() {
+función recalcularMetaDesdeCero() {
     const desde = obtenerElemento(IDS.FILTRO_DESDE)?.value;
     const hasta = obtenerElemento(IDS.FILTRO_HASTA)?.value;
 
-    if (!desde || !hasta) return;
+    si (!desde || !hasta) retorna;
 
     const pedidos = obtenerPedidos();
     const pedidosFiltrados = pedidos.filter(p => {
@@ -756,13 +756,13 @@ function recalcularMetaDesdeCero() {
         return fechaPedido >= desde && fechaPedido <= hasta;
     });
 
-    const totalVentas = pedidosFiltrados.reduce((sum, pedido) => sum + (pedido.total || 0), 0);
+    const totalVentas = pedidosFiltrados.reduce((suma, pedido) => suma + (pedido.total || 0), 0);
     const { totalGastosExternos, totalGastosInventario } = actualizarResumenGastos();
     const { totalCostos, totalGanancias } = calcularProductosConCostos(pedidosFiltrados, 10);
     
-    // NUEVA LÓGICA: Calcular utilidad neta para la meta
+    // NUEVA LÉGICA: Calcular utilidad neta para la meta
     let utilidadNeta = totalGanancias - totalGastosExternos;
-    if (totalGastosInventario > totalCostos) {
+    si (totalGastosInventario > totalCostos) {
         const excesoInventario = totalGastosInventario - totalCostos;
         utilidadNeta -= excesoInventario; // Restar solo el exceso
     }
@@ -775,10 +775,10 @@ function actualizarMeta(ventasPeriodo, tipoMeta) {
     const { totalGastosExternos, totalGastosInventario } = actualizarResumenGastos();
     const { totalCostos, totalGanancias } = calcularProductosConCostos(obtenerPedidos(), 10);
     
-    // NUEVA LÓGICA: Calcular utilidad neta considerando exceso de inventario
+    // NUEVA LÍGICA: Calcular utilidad neta considerando exceso de inventario
     let utilidadNeta = totalGanancias - totalGastosExternos;
-    let excesoInventario = 0;
-    if (totalGastosInventario > totalCostos) {
+    deje excesoInventario = 0;
+    si (totalGastosInventario > totalCostos) {
         excesoInventario = totalGastosInventario - totalCostos;
         utilidadNeta -= excesoInventario;
     }
@@ -786,60 +786,60 @@ function actualizarMeta(ventasPeriodo, tipoMeta) {
     const porcentaje = Math.min((utilidadNeta / config.metaGanancias) * 100, 100);
     const faltante = Math.max(config.metaGanancias - utilidadNeta, 0);
     const diasTranscurridos = calcularDiasTranscurridos(tipoMeta);
-    const proyeccion = calcularProyeccion(utilidadNeta, tipoMeta);
+    const proyección = calcularProyeccion(utilidadNeta, tipoMeta);
 
-    const containerId = `meta-${tipoMeta}-container`;
-    const container = document.getElementById(containerId);
+    constante containerId = `meta-${tipoMeta}-container`;
+    const contenedor = document.getElementById(containerId);
     
-    if (container) {
-        container.innerHTML = `
+    si (contenedor) {
+        contenedor.innerHTML = `
             <div class="meta-header">
-                <h3>Meta ${config.label}</h3>
+                Meta ${config.label}
                 <span class="badge ${utilidadNeta >= config.metaGanancias ? 'bg-success' : 'bg-warning'}">
                     ${porcentaje.toFixed(1)}%
                 </span>
             </div>
             
-            <div class="meta-details">
-                <div class="meta-stats">
+            <div class="meta-detalles">
+                <div class="meta-estadísticas">
                     <div class="stat">
-                        <span class="stat-label">Meta:</span>
+                        Meta:
                         <span class="stat-value">${formatearMoneda(config.metaGanancias)}</span>
                     </div>
                     <div class="stat">
                         <span class="stat-label">Utilidad Neta:</span>
-                        <span class="stat-value ${utilidadNeta >= 0 ? 'text-success' : 'text-danger'}">
+                        <span class="valor-estadístico ${utilidadNeta >= 0 ? 'texto-éxito' : 'texto-peligro'}">
                             ${formatearMoneda(utilidadNeta)}
                         </span>
                     </div>
                     <div class="stat">
-                        <span class="stat-label">Faltante:</span>
+                        <span class="stat-label">Falta:</span>
                         <span class="stat-value">${formatearMoneda(faltante)}</span>
                     </div>
                 </div>
                 
-                <div class="progress-container">
-                    <div class="progress-bar" style="width: ${porcentaje}%; 
-                        background-color: ${porcentaje >= 100 ? config.colorCompleto : config.colorProgreso};">
+                <div class="contenedor-de-progreso">
+                    <div class="progress-bar" style="ancho: ${porcentaje}%;
+                        color de fondo: ${porcentaje >= 100 ? config.colorCompleto : config.colorProgreso};">
                         <span class="progress-text">${porcentaje.toFixed(1)}%</span>
                     </div>
                 </div>
                 
-                <div class="meta-secondary-stats">
+                <div class="estadísticas-meta-secundarias">
                     <div class="stat">
                         <span class="stat-label">Ventas Brutas:</span>
-                        <span class="stat-value">${formatearMoneda(ventasPeriodo)}</span>
+                        ${formatearMoneda(ventasPeriodo)}</span>
                     </div>
                     <div class="stat">
-                        <span class="stat-label">Gastos Externos:</span>
-                        <span class="stat-value text-danger">${formatearMoneda(totalGastosExternos)}</span>
+                        Gastos externos:
+                        ${formatearMoneda(totalGastosExternos)}</span>
                     </div>
                     <div class="stat">
                         <span class="stat-label">Gastos Inventario:</span>
-                        <span class="stat-value text-danger">${formatearMoneda(totalGastosInventario)}</span>
+                        ${formatearMoneda(totalGastosInventario)}</span>
                     </div>
                     <div class="stat">
-                        <span class="stat-label">Exceso Inventario:</span>
+                        <span class="stat-label">Exceso de inventario:</span>
                         <span class="stat-value ${excesoInventario > 0 ? 'text-danger' : ''}">
                             ${formatearMoneda(excesoInventario)}
                         </span>
@@ -860,59 +860,59 @@ function actualizarMeta(ventasPeriodo, tipoMeta) {
     }
 }
 
-function alternarVistaMeta() {
+función alternarVistaMeta() {
     const contenedorMensual = document.getElementById('meta-mensual-container');
     const contenedorSemanal = document.getElementById('meta-semanal-container');
 
     if (tipoMetaActual === 'mensual') {
         if (contenedorMensual) contenedorMensual.style.display = 'block';
         if (contenedorSemanal) contenedorSemanal.style.display = 'none';
-    } else {
+    } demás {
         if (contenedorMensual) contenedorMensual.style.display = 'none';
         if (contenedorSemanal) contenedorSemanal.style.display = 'block';
     }
 }
 
-function configurarEventListeners() {
+función configurarEventListeners() {
     // Aplicar filtros
     const btnAplicar = obtenerElemento(IDS.BTN_APLICAR);
-    if (btnAplicar) {
+    si (btnAplicar) {
         btnAplicar.addEventListener('click', actualizarDashboard);
     }
 
-    if (!metaEventListenerAdded) {
+    si (!metaEventListenerAdded) {
         const filtroMeta = document.getElementById('filtro-tipo-meta');
-        if (filtroMeta) {
-            filtroMeta.addEventListener('change', manejarCambioMeta);
-            metaEventListenerAdded = true;
+        si (filtroMeta) {
+            filtroMeta.addEventListener('cambio', manejarCambioMeta);
+            metaEventListenerAdded = verdadero;
         }
     }
 
     // Cambiar tipo de gráfico
     const btnCambiarGrafico = obtenerElemento(IDS.BTN_CAMBIAR_GRAFICO);
-    if (btnCambiarGrafico) {
+    si (btnCambiarGrafico) {
         btnCambiarGrafico.addEventListener('click', alternarTipoGrafico);
     }
 
     // Cerrar modal
     const closeModal = obtenerElemento(IDS.CLOSE_MODAL);
-    if (closeModal) {
-        closeModal.addEventListener('click', () => {
+    si (cerrarModal) {
+        closeModal.addEventListener('clic', () => {
             const modal = obtenerElemento(IDS.MODAL);
-            if (modal) modal.style.display = 'none';
+            si (modal) modal.style.display = 'ninguno';
         });
     }
 
-    // Filtro de top productos
+    // Filtro de productos top
     const filtroTop = obtenerElemento(IDS.FILTRO_TOP);
-    if (filtroTop) {
-        filtroTop.addEventListener('change', actualizarDashboard);
+    si (filtroTop) {
+        filtroTop.addEventListener('cambiar', actualizarDashboard);
     }
 
     // Filtro de tipo de meta
     const filtroMeta = obtenerElemento(IDS.FILTRO_META);
-    if (filtroMeta) {
-        filtroMeta.addEventListener('change', (e) => {
+    si (filtroMeta) {
+        filtroMeta.addEventListener('cambio', (e) => {
             tipoMetaActual = e.target.value;
             alternarVistaMeta();
             actualizarDashboard();
@@ -921,97 +921,97 @@ function configurarEventListeners() {
 
     // CAMBIO: Un solo botón para enviar resumen
     const btnEnviarResumen = obtenerElemento('btn-enviar-resumen-detallado');
-    if (btnEnviarResumen) {
+    si (btnEnviarResumen) {
         btnEnviarResumen.addEventListener('click', enviarResumenDetallado);
     }
 
-    // Filtros de fecha - actualizar dashboard cuando cambien
+    // Filtros de fecha - actualizar el tablero cuando cambien
     const filtroDesde = obtenerElemento(IDS.FILTRO_DESDE);
     const filtroHasta = obtenerElemento(IDS.FILTRO_HASTA);
 
-    if (filtroDesde) {
-        filtroDesde.addEventListener('change', actualizarDashboard);
+    si (filtroDesde) {
+        filtroDesde.addEventListener('cambiar', actualizarDashboard);
     }
 
-    if (filtroHasta) {
-        filtroHasta.addEventListener('change', actualizarDashboard);
+    si (filtroHasta) {
+        filtroHasta.addEventListener('cambiar', actualizarDashboard);
     }
 
     // Cerrar modal al hacer click fuera de él
     const modal = obtenerElemento(IDS.MODAL);
-    if (modal) {
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.style.display = 'none';
+    si (modal) {
+        modal.addEventListener('clic', (e) => {
+            si (e.target === modal) {
+                modal.style.display = 'ninguno';
             }
         });
     }
 
     // Configurar formulario de gastos
     const formularioGasto = obtenerElemento(GASTOS_IDS.FORMULARIO_GASTO);
-    if (formularioGasto) {
-        formularioGasto.addEventListener('submit', (event) => {
-            console.log('Formulario de gasto enviado'); // Debug log
-            agregarGasto(event);
+    si (formularioGasto) {
+        formularioGasto.addEventListener('enviar', (evento) => {
+            console.log('Formulario de gastos enviado'); // registro de depuración
+            agregarGasto(evento);
         });
-    } else {
+    } demás {
         console.error('Formulario de gastos no encontrado:', GASTOS_IDS.FORMULARIO_GASTO);
-        mostrarNotificacion('Formulario de gastos no encontrado', 'error');
+        mostrarNotificacion('Formulario de gastos no encontrados', 'error');
     }
 
     // Configurar fecha de gasto por defecto (hoy)
     const fechaGasto = obtenerElemento(GASTOS_IDS.FECHA_GASTO);
-    if (fechaGasto) {
-        fechaGasto.valueAsDate = new Date();
-    } else {
+    si (fechaGasto) {
+        fechaGasto.valueAsDate = new Fecha();
+    } demás {
         console.error('Campo de fecha de gasto no encontrado:', GASTOS_IDS.FECHA_GASTO);
     }
 }
 
-function alternarTipoGrafico() {
-    chartType = chartType === 'bar' ? 'line' : 'bar';
+función alternarTipoGrafico() {
+    chartType = chartType === 'barra' ? 'línea' : 'barra';
     actualizarDashboard();
 
     // Actualizar texto del botón
     const btnCambiar = obtenerElemento(IDS.BTN_CAMBIAR_GRAFICO);
-    if (btnCambiar) {
-        btnCambiar.textContent = chartType === 'bar' ? 'Cambiar a Líneas' : 'Cambiar a Barras';
+    si (btnCambiar) {
+        btnCambiar.textContent = chartType === 'barra'? 'Cambiar a Líneas': 'Cambiar a Barras';
     }
 }
 
 function calcularTotalDescuentos(pedidos) {
-    return pedidos.reduce((sum, pedido) => {
-        if (!pedido.descuento || !pedido.items) return sum;
+    devolver pedidos.reduce((suma, pedido) => {
+        if (!pedido.descuento || !pedido.items) return suma;
 
         // Usar calcularTotalConDescuento para obtener el descuento correcto
-        window.pedidoActual = pedido; // Temporalmente asignar el pedido para que calcularTotalConDescuento funcione
+        window.pedidoActual = pedido; // Asigna temporalmente el pedido para que calcularTotalConDescuento funcione
         const resultadoDescuento = calcularTotalConDescuento();
-        window.pedidoActual = null; // Limpiar después de usar
-        return sum + resultadoDescuento.descuento;
+        ventana.pedidoActual = null; // Limpiar después de usar
+        return suma + resultadoDescuento.descuento;
     }, 0);
 }
 
 function calcularProductosConCostos(pedidos, limite = 10) {
     const productosMap = {};
     let totalProductosVendidos = 0;
-    let totalCostos = 0;
-    let totalGanancias = 0;
-    let totalEnvios = 0;
-    let gananciasEnvios = 0;
-    let costosEnvios = 0;
+    sea totalCostos = 0;
+    sea totalGanancias = 0;
+    deje totalEnvios = 0;
+    dejargananciasEnvios = 0;
+    deje costosEnvios = 0;
 
-    // Obtener combos desde combos.js
-    const combos = window.ComboManager ? window.ComboManager.cargarCombosGuardados() : [];
+    // combo Obtener desde combos.js
+    combos constantes = ventana.ComboManager? ventana.ComboManager.cargarCombosGuardados() : [];
 
     // Definir costos para productos especiales
     const COSTOS_ESPECIALES = {
         alitas: {
-            costoPorPieza: 11,      // Costo por cada alita
-            costoPorGramo: null     // No aplica para alitas
+            costoPorPieza: 11, // Costo por cada alita
+            costoPorGramo: null // No aplica para alitas
         },
-        boneless: {
-            costoPorPieza: 15,      // Costo por pieza de boneless
-            costoPorGramo: 0.25     // Costo por gramo de boneless
+        sin hueso: {
+            costoPorPieza: 15, // Costo por pieza deshuesada
+            costoPorGramo: 0.25 // Costo por gramo de boneless
         }
     };
 
@@ -1025,15 +1025,15 @@ function calcularProductosConCostos(pedidos, limite = 10) {
         gananciasEnvios += gananciaEnvio;
         costosEnvios += costoEnvio;
 
-        if (!pedido.items || !Array.isArray(pedido.items)) return;
+        if (!pedido.items || !Array.isArray(pedido.items)) regresa;
 
         pedido.items.forEach(item => {
-            if (item.esCombo && item.comboId) {
+            si (item.esCombo && item.comboId) {
                 // Manejar combos (código existente)
                 const combo = combos.find(c => String(c.id) === String(item.comboId));
-                if (!combo) {
+                si (!combo) {
                     console.warn(`Combo con ID ${item.comboId} no encontrado`);
-                    return;
+                    devolver;
                 }
 
                 const nombre = item.nombre || `Combo ${combo.id}`;
@@ -1041,7 +1041,7 @@ function calcularProductosConCostos(pedidos, limite = 10) {
                 const precioVenta = asegurarNumero(item.precio);
                 const totalVenta = precioVenta * cantidad;
 
-                const costoTotalCombo = combo.items.reduce((sum, comboItem) => {
+                const costoTotalCombo = combo.items.reduce((suma, comboItem) => {
                     const costoUnitario = asegurarNumero(comboItem.costoUnitario);
                     const cantidadItem = asegurarNumero(comboItem.cantidad);
                     return sum + (costoUnitario * cantidadItem);
@@ -1049,7 +1049,7 @@ function calcularProductosConCostos(pedidos, limite = 10) {
 
                 const gananciasCombo = totalVenta - costoTotalCombo;
 
-                if (!productosMap[nombre]) {
+                si (!productosMap[nombre]) {
                     productosMap[nombre] = {
                         cantidad: 0,
                         total: 0,
@@ -1057,7 +1057,7 @@ function calcularProductosConCostos(pedidos, limite = 10) {
                         ganancias: 0,
                         costoUnitario: costoTotalCombo / cantidad,
                         precioUnitario: precioVenta,
-                        esCombo: true
+                        esCombo: verdadero
                     };
                 }
 
@@ -1077,17 +1077,17 @@ function calcularProductosConCostos(pedidos, limite = 10) {
                 const totalVenta = precioVenta * cantidad;
 
                 // Calcular costo total del pedido especial
-                let costoTotalEspecial = 0;
+                deje costoTotalEspecial = 0;
                 
                 item.combinaciones.forEach(combinacion => {
                     if (combinacion.producto === 'alitas') {
                         // Alitas siempre por piezas
                         costoTotalEspecial += combinacion.cantidad * COSTOS_ESPECIALES.alitas.costoPorPieza;
-                    } else if (combinacion.producto === 'boneless') {
-                        // Boneless puede ser por piezas o gramos
+                    } else if (combinacion.producto === 'deshuesado') {
+                        // Deshuesado puede ser por piezas o gramos
                         if (combinacion.tipoMedida === 'piezas') {
                             costoTotalEspecial += combinacion.cantidad * COSTOS_ESPECIALES.boneless.costoPorPieza;
-                        } else {
+                        } demás {
                             costoTotalEspecial += combinacion.cantidad * COSTOS_ESPECIALES.boneless.costoPorGramo;
                         }
                     }
@@ -1097,7 +1097,7 @@ function calcularProductosConCostos(pedidos, limite = 10) {
                 costoTotalEspecial *= cantidad;
                 const gananciasEspecial = totalVenta - costoTotalEspecial;
 
-                if (!productosMap[nombre]) {
+                si (!productosMap[nombre]) {
                     productosMap[nombre] = {
                         cantidad: 0,
                         total: 0,
@@ -1105,8 +1105,8 @@ function calcularProductosConCostos(pedidos, limite = 10) {
                         ganancias: 0,
                         costoUnitario: costoTotalEspecial / cantidad,
                         precioUnitario: precioVenta,
-                        esCombo: false,
-                        esEspecial: true
+                        esCombo: falso,
+                        esEspecial: verdadero
                     };
                 }
 
@@ -1118,7 +1118,7 @@ function calcularProductosConCostos(pedidos, limite = 10) {
                 totalProductosVendidos += cantidad;
                 totalCostos += costoTotalEspecial;
                 totalGanancias += gananciasEspecial;
-            } else {
+            } demás {
                 // Manejar productos individuales normales (código existente)
                 const nombre = item.nombre ? item.nombre.split('(')[0].trim() : 'Producto sin nombre';
                 const cantidad = asegurarNumero(item.cantidad);
@@ -1134,7 +1134,7 @@ function calcularProductosConCostos(pedidos, limite = 10) {
                 totalCostos += costoTotal;
                 totalGanancias += gananciasProducto;
 
-                if (!productosMap[nombre]) {
+                si (!productosMap[nombre]) {
                     productosMap[nombre] = {
                         cantidad: 0,
                         total: 0,
@@ -1142,8 +1142,8 @@ function calcularProductosConCostos(pedidos, limite = 10) {
                         ganancias: 0,
                         costoUnitario: costoUnitario,
                         precioUnitario: precio,
-                        esCombo: false,
-                        esEspecial: false
+                        esCombo: falso,
+                        esEspecial: falso
                     };
                 }
 
@@ -1156,8 +1156,8 @@ function calcularProductosConCostos(pedidos, limite = 10) {
     });
 
     // Calcular el margen general
-    const totalVentasPeriodo = pedidos.reduce((sum, p) => sum + (p.total || 0), 0);
-    const margenGeneral = totalVentasPeriodo > 0 ? 
+    const totalVentasPeriodo = pedidos.reduce((suma, p) => suma + (p.total || 0), 0);
+    const margenGeneral = totalVentasPeriodo > 0 ?
         ((totalGanancias + gananciasEnvios) / totalVentasPeriodo) * 100 : 0;
 
     // Preparar productos para la tabla
@@ -1165,18 +1165,18 @@ function calcularProductosConCostos(pedidos, limite = 10) {
         .map(([nombre, datos]) => ({
             nombre,
             ...datos,
-            margenGanancia: datos.total > 0 ? ((datos.ganancias / datos.total) * 100) : 0
+            margenGanancia: datos.total > 0 ? ((datos.ganancias / datos.total) * 100): 0
         }))
         .sort((a, b) => b.total - a.total)
         .slice(0, limite);
 
-    return {
+    devolver {
         topProductos,
         totalProductosVendidos,
         totalCostos: totalCostos + costosEnvios,
         totalGanancias: totalGanancias + gananciasEnvios,
         totalEnvios,
-        gananciasEnvios,
+        GananciasEnvios,
         costosEnvios,
         margenGananciasGeneral: margenGeneral
     };
@@ -1184,69 +1184,69 @@ function calcularProductosConCostos(pedidos, limite = 10) {
 
 function actualizarGraficoPie(productos) {
     const canvas = obtenerElemento(IDS.PIE_CHART);
-    if (!canvas) return;
+    si (!canvas) retorna;
 
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    si (!ctx) retorna;
 
     // Destruir gráfico anterior si existe
-    if (window.pieChartProductos) {
-        window.pieChartProductos.destroy();
+    si (ventana.pieChartProductos) {
+        ventana.pieChartProductos.destroy();
     }
 
     // Filtrar productos (excluir envíos si existen)
     const productosFiltrados = productos.filter(p => p.nombre !== 'Envíos');
 
-    if (productosFiltrados.length === 0) {
+    si (productosFiltrados.length === 0) {
         // Mostrar mensaje si no hay productos
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.clearRect(0, 0, lienzo.ancho, lienzo.alto);
         ctx.fillStyle = '#666';
-        ctx.textAlign = 'center';
+        ctx.textAlign = 'centro';
         ctx.font = '16px Arial';
         ctx.fillText('No hay productos para mostrar', canvas.width / 2, canvas.height / 2);
-        return;
+        devolver;
     }
 
-    const colores = [
+    constantes colores = [
         '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0',
         '#9966FF', '#FF9F40', '#66BB6A', '#EF5350',
         '#29B6F6', '#AB47BC', '#FFA726', '#8D6E63'
     ];
 
-    try {
-        window.pieChartProductos = new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: productosFiltrados.map(p => p.nombre),
-                datasets: [{
-                    data: productosFiltrados.map(p => p.total),
+    intentar {
+        ventana.pieChartProductos = new Chart(ctx, {
+            tipo: 'pastel',
+            datos: {
+                etiquetas: productosFiltrados.map(p => p.nombre),
+                conjuntos de datos: [{
+                    datos: productosFiltrados.map(p => p.total),
                     backgroundColor: colores.slice(0, productosFiltrados.length),
-                    borderColor: '#fff',
-                    borderWidth: 2
+                    color del borde: '#fff',
+                    Ancho del borde: 2
                 }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: function (context) {
-                                return `${context.label}: ${formatearMoneda(context.raw)}`;
+            opciones: {
+                responsivo: verdadero,
+                mantenerRelaciónDeAspecto: falso,
+                complementos: {
+                    información sobre herramientas: {
+                        devoluciones de llamada: {
+                            etiqueta: función (contexto) {
+                                devuelve `${contexto.etiqueta}: ${formatearMoneda(contexto.raw)}`;
                             }
                         }
                     },
-                    legend: {
-                        position: 'right',
-                        labels: {
-                            boxWidth: 15,
-                            padding: 10
+                    leyenda: {
+                        posición: 'derecha',
+                        etiquetas: {
+                            Ancho de caja: 15,
+                            relleno: 10
                         }
                     }
                 }
             }
         });
-    } catch (error) {
+    } captura (error) {
         console.error('Error al crear gráfico de productos:', error);
         mostrarNotificacion('Error al crear el gráfico de productos', 'error');
     }
@@ -1257,72 +1257,72 @@ function actualizarMetaMensual(ventasPeriodo) {
 }
 
 function actualizarMetaSemanal(ventasPeriodo) {
-    actualizarMeta(ventasPeriodo, 'semanal');
+    Meta(ventasPeriodo, 'semanal');
 }
 
 function actualizarTablaProductos(productos, totalVentas) {
     const tbody = document.getElementById('tabla-productos-costos');
-    if (!tbody) return;
+    si (!tbody) retorna;
 
     tbody.innerHTML = '';
 
-    if (productos.length === 0) {
+    si (productos.length === 0) {
         tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay productos para mostrar</td></tr>';
-        return;
+        devolver;
     }
 
     productos.forEach(producto => {
-        const porcentajeVentas = totalVentas > 0 ? ((producto.total / totalVentas) * 100).toFixed(1) : '0.0';
-        const row = document.createElement('tr');
+        constante porcentajeVentas = totalVentas > 0 ? ((producto.total / totalVentas) * 100).toFixed(1) : '0.0';
+        constante fila = document.createElement('tr');
 
         // Clases CSS según tipo de producto
         if (producto.nombre === 'Envíos') {
-            row.classList.add('envio-row');
+            fila.classList.add('envio-fila');
         } else if (producto.esCombo) {
-            row.classList.add('combo-row');
+            fila.classList.add('combo-fila');
         } else if (producto.esEspecial) {
-            row.classList.add('especial-row');
+            fila.classList.add('fila-especial');
         }
 
-        let colorMargen = 'text-success';
-        if (producto.margenGanancia < 30) colorMargen = 'text-danger';
+        deje que colorMargen = 'texto-éxito';
+        if (producto.margenGanancia < 30) colorMargen = 'text-peligro';
         else if (producto.margenGanancia < 50) colorMargen = 'text-warning';
 
-        row.innerHTML = `
+        fila.innerHTML = `
             <td>${producto.nombre}
-                ${producto.nombre === 'Envíos' ? ' <i class="fas fa-truck"></i>' : 
-                 producto.esCombo ? ' <i class="fas fa-box"></i>' : 
-                 producto.esEspecial ? ' <i class="fas fa-star"></i>' : ''}
+                ${producto.nombre === 'Envíos' ? ' <i class="fas fa-truck"></i>' :
+                 producto.esCombo ? ' <i class="fas fa-box"></i>' :
+                 producto.esEspecial? ' <i class="fas fa-star"></i>' : ''}
             </td>
             <td class="text-right">${producto.cantidad.toLocaleString()}</td>
             <td class="text-right">${formatearMoneda(producto.total)}</td>
             <td class="text-right">${formatearMoneda(producto.costo)}</td>
-            <td class="text-right ${producto.ganancias >= 0 ? 'text-success' : 'text-danger'}">
+            <td class="text-right ${producto.ganancias >= 0 ? 'texto-éxito' : 'texto-peligro'}">
                 ${formatearMoneda(producto.ganancias)}
             </td>
             <td class="text-right ${colorMargen}">${producto.margenGanancia.toFixed(1)}%</td>
-            <td class="text-right">${porcentajeVentas}%</td>
+            <td class="text-right">${porcentaje de ventas}%</td>
         `;
-        tbody.appendChild(row);
+        tbody.appendChild(fila);
     });
 }
 
 function actualizarGraficoVentas(pedidos, desde, hasta) {
     const canvas = obtenerElemento(IDS.VENTAS_CHART);
-    if (!canvas) return;
+    si (!canvas) retorna;
 
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    si (!ctx) retorna;
 
-    // Generar array de fechas
+    // Generar matriz de fechas
     const fechas = [];
-    const inicio = new Date(desde);
+    const inicio = nueva Fecha(desde);
     const fin = new Date(hasta);
 
-    for (let fecha = new Date(inicio); fecha <= fin; fecha.setDate(fecha.getDate() + 1)) {
+    for (let fecha = new Fecha(inicio); fecha <= fin; fecha.setDate(fecha.getDate() + 1)) {
         fechas.push(fecha.toLocaleDateString('es-ES', {
-            day: 'numeric',
-            month: 'short'
+            día: 'numérico',
+            mes: 'corto'
         }));
     }
 
@@ -1335,89 +1335,89 @@ function actualizarGraficoVentas(pedidos, desde, hasta) {
     // Calcular ventas por fecha
     pedidos.forEach(pedido => {
         const fechaPedido = new Date(pedido.fecha).toLocaleDateString('es-ES', {
-            day: 'numeric',
-            month: 'short'
+            día: 'numérico',
+            mes: 'corto'
         });
 
-        if (ventasPorFecha[fechaPedido] !== undefined) {
+        if (ventasPorFecha[fechaPedido] !== undefinido) {
             ventasPorFecha[fechaPedido] += pedido.total || 0;
         }
     });
 
     // Destruir gráfico anterior si existe
-    if (window.ventasChart) {
-        window.ventasChart.destroy();
+    si (ventana.ventasChart) {
+        ventana.ventasChart.destroy();
     }
 
     // Configuración de colores según tipo de gráfico
-    const colores = {
+    constantes colores = {
         bar: {
-            backgroundColor: 'rgba(54, 162, 235, 0.7)',
-            borderColor: 'rgba(54, 162, 235, 1)'
+            colorDeFondo: 'rgba(54, 162, 235, 0.7)',
+            color del borde: 'rgba(54, 162, 235, 1)'
         },
-        line: {
-            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            borderColor: 'rgba(75, 192, 192, 1)'
+        línea: {
+            colorDeFondo: 'rgba(75, 192, 192, 0.2)',
+            color del borde: 'rgba(75, 192, 192, 1)'
         }
     };
 
     // Crear nuevo gráfico
-    try {
-        window.ventasChart = new Chart(ctx, {
-            type: chartType,
-            data: {
-                labels: fechas,
-                datasets: [{
-                    label: 'Ventas por día',
-                    data: fechas.map(fecha => ventasPorFecha[fecha]),
-                    backgroundColor: colores[chartType].backgroundColor,
+    intentar {
+        ventana.ventasChart = new Chart(ctx, {
+            tipo: tipográfico,
+            datos: {
+                etiquetas: fechas,
+                conjuntos de datos: [{
+                    etiqueta: 'Ventas por día',
+                    datos: fechas.map(fecha => ventasPorFecha[fecha]),
+                    backgroundColor: colores[tipográfico].backgroundColor,
                     borderColor: colores[chartType].borderColor,
-                    borderWidth: 2,
-                    fill: chartType === 'line',
-                    tension: 0.4
+                    Ancho del borde: 2,
+                    relleno: chartType === 'línea',
+                    tensión: 0,4
                 }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: function (context) {
-                                return `Ventas: ${formatearMoneda(context.raw)}`;
+            opciones: {
+                responsivo: verdadero,
+                mantenerRelaciónDeAspecto: falso,
+                complementos: {
+                    información sobre herramientas: {
+                        devoluciones de llamada: {
+                            etiqueta: función (contexto) {
+                                devuelve `Ventas: ${formatearMoneda(context.raw)}`;
                             }
                         }
                     },
-                    legend: {
-                        position: 'top'
+                    leyenda: {
+                        posición: 'arriba'
                     }
                 },
-                scales: {
+                escalas: {
                     y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Monto ($)'
+                        beginAtZero: verdadero,
+                        título: {
+                            visualización: verdadero,
+                            texto: 'Monto ($)'
                         },
-                        ticks: {
-                            callback: function (value) {
-                                return formatearMoneda(value);
+                        garrapatas: {
+                            devolución de llamada: función (valor) {
+                                retorna formatearMoneda(valor);
                             }
                         }
                     },
                     x: {
-                        title: {
-                            display: true,
-                            text: 'Fecha'
+                        título: {
+                            visualización: verdadero,
+                            texto: 'Fecha'
                         },
-                        grid: {
-                            display: false
+                        red: {
+                            visualización: falso
                         }
                     }
                 }
             }
         });
-    } catch (error) {
+    } captura (error) {
         console.error('Error al crear gráfico de ventas:', error);
         mostrarNotificacion('Error al crear el gráfico de ventas', 'error');
     }
@@ -1425,23 +1425,23 @@ function actualizarGraficoVentas(pedidos, desde, hasta) {
 
 // Función MODIFICADA para enviar el resumen detallado
 function enviarResumenDetallado() {
-    try {
+    intentar {
         const pedidos = obtenerPedidos();
         const gastos = obtenerGastos();
         const desde = obtenerElemento(IDS.FILTRO_DESDE)?.value;
         const hasta = obtenerElemento(IDS.FILTRO_HASTA)?.value;
 
-        if (!desde || !hasta) {
+        si (!desde || !hasta) {
             mostrarNotificacion('Por favor selecciona las fechas para generar el resumen', 'warning');
-            return;
+            devolver;
         }
 
-        const fechaInicio = new Date(desde);
-        const fechaFin = new Date(hasta);
+        const fechaInicio = new Fecha(desde);
+        const fechaFin = nueva Fecha(hasta);
         
         if (isNaN(fechaInicio.getTime()) || isNaN(fechaFin.getTime())) {
             mostrarNotificacion('Fechas no válidas', 'error');
-            return;
+            devolver;
         }
 
         const diasDiferencia = Math.ceil((fechaFin - fechaInicio) / (1000 * 60 * 60 * 24)) + 1;
@@ -1454,37 +1454,37 @@ function enviarResumenDetallado() {
 
         if (pedidosFiltrados.length === 0 && gastosFiltrados.length === 0) {
             mostrarNotificacion('No hay datos en el rango de fechas seleccionado', 'warning');
-            return;
+            devolver;
         }
 
-        const totalVentas = pedidosFiltrados.reduce((sum, p) => sum + (p.total || 0), 0);
+        const totalVentas = pedidosFiltrados.reduce((suma, p) => suma + (p.total || 0), 0);
         const totalPedidos = pedidosFiltrados.length;
-        const promedioTicket = totalPedidos > 0 ? (totalVentas / totalPedidos) : 0;
+        const promedioTicket = totalPedidos > 0 ? (totalVentas / totalPedidos): 0;
         const totalDescuentos = calcularTotalDescuentos(pedidosFiltrados);
         const contieneCombos = pedidosFiltrados.some(pedido => pedido.items.some(item => item.esCombo === true));
         const soloCombos = pedidosFiltrados.every(pedido => pedido.items.every(item => item.esCombo === true));
 
-        const {
+        constante {
             topProductos,
             totalProductosVendidos,
-            totalCostos,
+            Costos totales,
             totalGanancias,
             totalEnvios,
-            gananciasEnvios,
+            GananciasEnvios,
             margenGananciasGeneral
         } = calcularProductosConCostos(pedidosFiltrados, 10);
 
         const totalGastosExternos = gastosFiltrados
             .filter(gasto => gasto.categoria === 'externo')
-            .reduce((sum, gasto) => sum + gasto.monto, 0);
+            .reduce((suma, gasto) => suma + gasto.monto, 0);
         const totalGastosInventario = gastosFiltrados
             .filter(gasto => gasto.categoria === 'inventario')
-            .reduce((sum, gasto) => sum + gasto.monto, 0);
+            .reduce((suma, gasto) => suma + gasto.monto, 0);
         
-        // NUEVA LÓGICA: Calcular utilidad neta y exceso de inventario
+        // NUEVA LÉGICA: Calcular utilidad neta y exceso de inventario
         let utilidadNeta = totalGanancias - totalGastosExternos;
-        let excesoInventario = 0;
-        if (totalGastosInventario > totalCostos) {
+        deje excesoInventario = 0;
+        si (totalGastosInventario > totalCostos) {
             excesoInventario = totalGastosInventario - totalCostos;
             utilidadNeta -= excesoInventario;
         }
@@ -1502,84 +1502,84 @@ function enviarResumenDetallado() {
         const diasSinVentas = diasDiferencia - Object.keys(ventasPorDia).length;
         const porcentajeDiasConVentas = ((diasDiferencia - diasSinVentas) / diasDiferencia * 100).toFixed(1);
 
-        let analisisTendencia = '';
-        if (diasDiferencia > 7) {
-            const mitadPeriodo = new Date(fechaInicio.getTime() + (fechaFin - fechaInicio) / 2);
+        deje que analisisTendencia = '';
+        si (diasDiferencia > 7) {
+            const mitadPeriodo = new Fecha(fechaInicio.getTime() + (fechaFin - fechaInicio) / 2);
             const ventasPrimeraMitad = pedidosFiltrados
-                .filter(p => new Date(p.fecha) <= mitadPeriodo)
-                .reduce((sum, p) => sum + (p.total || 0), 0);
+                .filter(p => nueva Fecha(p.fecha) <= mitadPeriodo)
+                .reduce((suma, p) => suma + (p.total || 0), 0);
             const ventasSegundaMitad = totalVentas - ventasPrimeraMitad;
-            const cambioPorcentual = ventasPrimeraMitad > 0 ? 
+            const cambioPorcentual = ventasPrimeraMitad > 0 ?
                 ((ventasSegundaMitad - ventasPrimeraMitad) / ventasPrimeraMitad * 100) : 0;
-            analisisTendencia = `• Tendencia ventas: ${cambioPorcentual >= 0 ? '↑' : '↓'} ${Math.abs(cambioPorcentual).toFixed(1)}% ` +
-                               `(${formatearMoneda(ventasPrimeraMitad)} → ${formatearMoneda(ventasSegundaMitad)})\n`;
+            analisisTendencia = `â€¢ Tendencia ventas: ${cambioPorcentual >= 0 ? 'â†'' : 'â†“'} ${Math.abs(cambioPorcentual).toFixed(1)}% ` +
+                               `(${formatearMoneda(ventasPrimeraMitad)} â†' ${formatearMoneda(ventasSegundaMitad)})\n`;
         }
 
-        let comparativaPeriodoAnterior = '';
-        try {
+        deje que el periodo comparativo anterior sea igual a '';
+        intentar {
             const periodoAnterior = calcularComparativaPeriodoAnterior(desde, hasta, pedidos);
-            if (periodoAnterior) {
-                const cambioVentas = periodoAnterior.totalVentas > 0 ? 
+            si (periodoAnterior) {
+                const cambioVentas = periodoAnterior.totalVentas > 0 ?
                     ((totalVentas - periodoAnterior.totalVentas) / periodoAnterior.totalVentas * 100) : 0;
-                comparativaPeriodoAnterior = `• Comparativa con período anterior (${periodoAnterior.dias} días):\n` +
-                    `   - Ventas: ${cambioVentas >= 0 ? '+' : ''}${cambioVentas.toFixed(1)}%\n` +
-                    `   - Pedidos: ${periodoAnterior.totalPedidos > 0 ? 
+                comparativaPeriodoAnterior = `â€¢ Comparativa con periodo anterior (${periodoAnterior.dias} días):\n` +
+                    ` - Ventas: ${cambioVentas >= 0 ? '+' : ''}${cambioVentas.toFixed(1)}%\n` +
+                    ` - Pedidos: ${periodoAnterior.totalPedidos > 0 ?
                         ((totalPedidos - periodoAnterior.totalPedidos) / periodoAnterior.totalPedidos * 100).toFixed(1) : 'N/A'}%\n` +
-                    `   - Ticket promedio: ${periodoAnterior.ticketPromedio > 0 ? 
+                    ` - Promedio del ticket: ${periodoAnterior.ticketPromedio > 0 ?
                         ((promedioTicket - periodoAnterior.ticketPromedio) / periodoAnterior.ticketPromedio * 100).toFixed(1) : 'N/A'}%\n`;
             }
-        } catch (e) {
-            console.error('Error calculando comparativa:', e);
+        } captura (e) {
+            console.error('Error al calcular comparativa:', e);
         }
 
-        let metaCalculada;
+        deje metaCalculada;
         if (tipoMetaActual === 'mensual') {
             const diasEnMes = new Date(fechaFin.getFullYear(), fechaFin.getMonth() + 1, 0).getDate();
             metaCalculada = (META_MENSUAL / diasEnMes) * diasDiferencia;
-        } else {
+        } demás {
             metaCalculada = (META_SEMANAL / 7) * diasDiferencia;
         }
 
         const porcentajeMeta = (totalVentas / metaCalculada) * 100;
 
         const fechaFormateada = `${fechaInicio.toLocaleDateString('es-ES')} - ${fechaFin.toLocaleDateString('es-ES')}`;
-        let mensaje = `📊 *REPORTE DETALLADO*\n`;
-        mensaje += `📅 *Período:* ${fechaFormateada} (${diasDiferencia} días)\n\n`;
+        let mensaje = `ðŸ“Š *REPORTE DETALLADO*\n`;
+        mensaje += `ðŸ“… *Período:* ${fechaFormateada} (${diasDiferencia} días)\n\n`;
 
-        mensaje += `💰 *RESUMEN FINANCIERO*\n`;
-        mensaje += `• Ventas totales: ${formatearMoneda(totalVentas)}\n`;
-        mensaje += `• Costos de producción: ${formatearMoneda(totalCostos)}\n`;
-        mensaje += `• Gastos externos: ${formatearMoneda(totalGastosExternos)}\n`;
-        mensaje += `• Gastos de inventario: ${formatearMoneda(totalGastosInventario)}\n`;
-        mensaje += `• Exceso de inventario: ${formatearMoneda(excesoInventario)}\n`;
-        mensaje += `• Ganancias brutas: ${formatearMoneda(totalGanancias)}\n`;
-        mensaje += `• Ganancias netas: ${formatearMoneda(utilidadNeta)}\n`;
-        mensaje += `• Dinero en caja: ${formatearMoneda(dineroCaja)}\n`;
-        mensaje += `• Margen de ganancia: ${margenGananciasGeneral.toFixed(1)}%\n`;
-        if (totalDescuentos > 0) {
-            let descuentoTexto = `• Descuentos aplicados: ${formatearMoneda(totalDescuentos)}`;
+        mensaje += `ðŸ'° *RESUMEN FINANCIERO*\n`;
+        mensaje += `â€¢ Ventas totales: ${formatearMoneda(totalVentas)}\n`;
+        mensaje += `â€¢ Costos de producción: ${formatearMoneda(totalCostos)}\n`;
+        mensaje += `â€¢ Gastos externos: ${formatearMoneda(totalGastosExternos)}\n`;
+        mensaje += `â€¢ Gastos de inventario: ${formatearMoneda(totalGastosInventario)}\n`;
+        mensaje += `â€¢ Exceso de inventario: ${formatearMoneda(excesoInventario)}\n`;
+        mensaje += `â€¢ Ganancias brutas: ${formatearMoneda(totalGanancias)}\n`;
+        mensaje += `â€¢ Ganancias netas: ${formatearMoneda(utilidadNeta)}\n`;
+        mensaje += `â€¢ Dinero en caja: ${formatearMoneda(dineroCaja)}\n`;
+        mensaje += `â€¢ Margen de ganancia: ${margenGananciasGeneral.toFixed(1)}%\n`;
+        si (totalDescuentos > 0) {
+            let descuentoTexto = `â€¢ Descuentos aplicados: ${formatearMoneda(totalDescuentos)}`;
             if (contieneCombos && !soloCombos) {
                 descuentoTexto += ' (aplicado a productos no combos)';
-            } else if (soloCombos) {
-                descuentoTexto += ' (no aplicable, solo combos)';
+            } de lo contrario si (soloCombos) {
+                descuentoTexto += '(no aplicable, combos solo)';
             }
             mensaje += `${descuentoTexto}\n`;
         }
-        mensaje += `• Ventas por envíos: ${formatearMoneda(totalEnvios)}\n`;
-        mensaje += `• Ganancias por envíos: ${formatearMoneda(gananciasEnvios)}\n\n`;
+        mensaje += `â€¢ Ventas por envíos: ${formatearMoneda(totalEnvios)}\n`;
+        mensaje += `â€¢ Ganancias por envíos: ${formatearMoneda(gananciasEnvios)}\n\n`;
 
-        if (analisisTendencia) {
-            mensaje += `📈 *ANÁLISIS DE TENDENCIAS*\n`;
+        si (análisisTendencia) {
+            mensaje += `ðŸ“ˆ *ANÍLISIS DE TENDENCIAS*\n`;
             mensaje += analisisTendencia;
         }
 
-        if (comparativaPeriodoAnterior) {
-            mensaje += `🔍 *COMPARATIVA*\n`;
+        si (comparativaPeriodoAnterior) {
+            mensaje += `ðŸ” *COMPARATIVA*\n`;
             mensaje += comparativaPeriodoAnterior;
         }
 
-        if (gastosFiltrados.length > 0) {
-            mensaje += `💸 *GASTOS POR CATEGORÍA*\n`;
+        si (gastosFiltrados.length > 0) {
+            mensaje += `ðŸ'¸ *GASTOS POR CATEGORÍA A*\n`;
             const gastosPorTipo = {};
             GASTOS_TIPOS.forEach(tipo => {
                 gastosPorTipo[tipo.nombre] = { externo: 0, inventario: 0 };
@@ -1588,7 +1588,7 @@ function enviarResumenDetallado() {
             gastosFiltrados.forEach(gasto => {
                 if (gasto.categoria === 'externo') {
                     gastosPorTipo[gasto.tipo].externo += gasto.monto;
-                } else {
+                } demás {
                     gastosPorTipo[gasto.tipo].inventario += gasto.monto;
                 }
             });
@@ -1598,69 +1598,69 @@ function enviarResumenDetallado() {
                 .sort((a, b) => (b[1].externo + b[1].inventario) - (a[1].externo + a[1].inventario));
 
             gastosOrdenados.forEach(([tipo, montos], index) => {
-                if (montos.externo > 0) {
-                    mensaje += `${index + 1}. ${tipo} (Externo): ${formatearMoneda(montos.externo)}\n`;
+                si (montos.externo > 0) {
+                    mensaje += `${índice + 1}. ${tipo} (Externo): ${formatearMoneda(montos.externo)}\n`;
                 }
-                if (montos.inventario > 0) {
-                    mensaje += `${index + 1}. ${tipo} (Inventario): ${formatearMoneda(montos.inventario)}\n`;
+                si (montos.inventario > 0) {
+                    mensaje += `${índice + 1}. ${tipo} (Inventario): ${formatearMoneda(montos.inventario)}\n`;
                 }
             });
 
             mensaje += `\n`;
         }
 
-        mensaje += `📋 *ESTADÍSTICAS GENERALES*\n`;
-        mensaje += `• Total de pedidos: ${totalPedidos.toLocaleString()}\n`;
-        mensaje += `• Productos vendidos: ${totalProductosVendidos.toLocaleString()}\n`;
-        mensaje += `• Ticket promedio: ${formatearMoneda(promedioTicket)}\n`;
-        mensaje += `• Promedio diario: ${formatearMoneda(totalVentas / diasDiferencia)}\n\n`;
+        mensaje += `ðŸ“‹ *ESTADÍSTICAS GENERALES*\n`;
+        mensaje += `â€¢ Total de pedidos: ${totalPedidos.toLocaleString()}\n`;
+        mensaje += `â€¢ Productos vendidos: ${totalProductosVendidos.toLocaleString()}\n`;
+        mensaje += `â€¢ Boleto promedio: ${formatearMoneda(promedioTicket)}\n`;
+        mensaje += `â€¢ Promedio diario: ${formatearMoneda(totalVentas / diasDiferencia)}\n\n`;
 
-        mensaje += `🎯 *PROGRESO DE META*\n`;
-        mensaje += `• Meta ${tipoMetaActual}: ${formatearMoneda(metaCalculada)}\n`;
-        mensaje += `• Progreso: ${porcentajeMeta.toFixed(1)}%\n`;
-        mensaje += `• ${porcentajeMeta >= 100 ? '✅ Meta alcanzada' : '⚠️ Meta no alcanzada'}\n\n`;
+        mensaje += `ðŸŽ¯ *PROGRESO DE META*\n`;
+        mensaje += `â€¢ Meta ${tipoMetaActual}: ${formatearMoneda(metaCalculada)}\n`;
+        mensaje += `â€¢ Progreso: ${porcentajeMeta.toFixed(1)}%\n`;
+        mensaje += `â€¢ ${porcentajeMeta >= 100 ? 'âœ… Meta alcanzada' : 'âš ï¸ Meta no alcanzada'}\n\n`;
 
-        mensaje += `🏆 *TOP 5 PRODUCTOS MÁS VENDIDOS*\n`;
+        mensaje += `ðŸ † *TOP 5 PRODUCTOS MÁS VENDIDOS*\n`;
         topProductos.slice(0, 5).forEach((producto, index) => {
-            mensaje += `${index + 1}. *${producto.nombre}${producto.esCombo ? ' (Combo)' : ''}*\n`;
-            mensaje += `   • Cantidad: ${producto.cantidad.toLocaleString()}\n`;
-            mensaje += `   • Ventas: ${formatearMoneda(producto.total)}\n`;
-            mensaje += `   • Ganancias: ${formatearMoneda(producto.ganancias)}\n`;
-            mensaje += `   • Margen: ${producto.margenGanancia.toFixed(1)}%\n\n`;
+            mensaje += `${índice + 1}. *${producto.nombre}${producto.esCombo ? ' (Combinación)' : ''}*\n`;
+            mensaje += ` â€¢ Cantidad: ${producto.cantidad.toLocaleString()}\n`;
+            mensaje += ` â€¢ Ventas: ${formatearMoneda(producto.total)}\n`;
+            mensaje += ` â€¢ Ganancias: ${formatearMoneda(producto.ganancias)}\n`;
+            mensaje += ` â€¢ Margen: ${producto.margenGanancia.toFixed(1)}%\n\n`;
         });
 
-        if (mensaje.length > 50000) {
+        si (mensaje.length > 50000) {
             const mensajeOriginal = mensaje;
-            mensaje = mensaje.substring(0, 45000) + "\n\n... [RESUMEN ACORTADO POR LÍMITE DE CARACTERES] ...\n";
+            mensaje = mensaje.substring(0, 45000) + "\n\n... [RESUMEN ACORTADO POR LÍMITES DE CARACTERES] ...\n";
             const partesImportantes = [
-                mensajeOriginal.match(/📊.*?\n\n/)[0],
-                mensajeOriginal.match(/💰.*?\n\n/)[0],
-                mensajeOriginal.match(/🎯.*?\n\n/)[0],
-                mensajeOriginal.match(/🏆.*?%\n\n/)[0]
+                mensajeOriginal.match(/ðŸ“Š.*?\n\n/)[0],
+                mensajeOriginal.match(/ðŸ'°.*?\n\n/)[0],
+                mensajeOriginal.match(/ðŸŽ¯.*?\n\n/)[0],
+                mensajeOriginal.match(/ðŸ †.*?%\n\n/)[0]
             ].join('\n');
             mensaje = partesImportantes + "\n\n... [RESUMEN COMPLETO DEMASIADO EXTENSO] ...";
         }
 
-        mensaje += `⏰ *Generado el ${new Date().toLocaleString('es-ES')}*`;
+        mensaje += `â ° *Generado el ${new Date().toLocaleString('es-ES')}*`;
 
         const url = `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
-        window.open(url, '_blank');
-    } catch (error) {
+        ventana.open(url, '_blank');
+    } captura (error) {
         console.error('Error generando resumen:', error);
         mostrarNotificacion('Error al generar el resumen', 'error');
     }
 }
 
 function calcularComparativaPeriodoAnterior(desde, hasta, todosPedidos) {
-    const fechaInicio = new Date(desde);
-    const fechaFin = new Date(hasta);
+    const fechaInicio = new Fecha(desde);
+    const fechaFin = nueva Fecha(hasta);
     const duracionDias = Math.ceil((fechaFin - fechaInicio) / (1000 * 60 * 60 * 24)) + 1;
     
     // Calcular fechas del período anterior
-    const fechaInicioAnterior = new Date(fechaInicio);
+    const fechaInicioAnterior = new Fecha(fechaInicio);
     fechaInicioAnterior.setDate(fechaInicio.getDate() - duracionDias);
     
-    const fechaFinAnterior = new Date(fechaInicio);
+    const fechaFinAnterior = new Fecha(fechaInicio);
     fechaFinAnterior.setDate(fechaInicio.getDate() - 1);
     
     // Filtrar pedidos del período anterior
@@ -1671,15 +1671,15 @@ function calcularComparativaPeriodoAnterior(desde, hasta, todosPedidos) {
         return fechaPedido >= desdeAnterior && fechaPedido <= hastaAnterior;
     });
     
-    if (pedidosAnterior.length === 0) return null;
+    si (pedidosAnterior.length === 0) retorna nulo;
     
     // Calcular métricas del período anterior
-    const totalVentasAnterior = pedidosAnterior.reduce((sum, p) => sum + (p.total || 0), 0);
+    const totalVentasAnterior = pedidosAnterior.reduce((suma, p) => suma + (p.total || 0), 0);
     const totalPedidosAnterior = pedidosAnterior.length;
-    const ticketPromedioAnterior = totalPedidosAnterior > 0 ? 
+    const ticketPromedioAnterior = totalPedidosAnterior > 0 ?
         (totalVentasAnterior / totalPedidosAnterior) : 0;
     
-    return {
+    devolver {
         totalVentas: totalVentasAnterior,
         totalPedidos: totalPedidosAnterior,
         ticketPromedio: ticketPromedioAnterior,
@@ -1689,16 +1689,16 @@ function calcularComparativaPeriodoAnterior(desde, hasta, todosPedidos) {
     };
 }
 
-// Función para inicializar el dashboard cuando se carga la página
-function inicializarDashboard() {
-    if (typeof Chart === 'undefined') {
+// Función para inicializar el tablero cuando se carga la página
+función inicializarDashboard() {
+    si (tipo de Gráfico === 'indefinido') {
         console.error('Chart.js no está disponible');
         mostrarNotificacion('Error: Chart.js no está disponible', 'error');
-        return;
+        devolver;
     }
 
-    Chart.defaults.responsive = true;
-    Chart.defaults.maintainAspectRatio = false;
+    Gráfico.defaults.responsive = verdadero;
+    Gráfico.defaults.maintainAspectRatio = falso;
 
     // Configurar valores iniciales para las metas desde METAS_CONFIG
     const elementoMetaMensual = obtenerElemento('meta-mensual-valor');
@@ -1713,16 +1713,16 @@ function inicializarDashboard() {
 }
 
 // Ejecutar cuando el DOM esté listo
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', inicializarDashboard);
-} else {
+si (documento.readyState === 'cargando') {
+    documento.addEventListener('DOMContentLoaded', inicializarDashboard);
+} demás {
     inicializarDashboard();
 }
 
 // Exportar funciones principales para uso externo
-window.dashboardFunctions = {
+ventana.dashboardFunctions = {
     mostrarDashboard,
-    actualizarDashboard,
-    enviarResumenDetallado,
+    ActualizarDashboard,
+    Enviar Resumen Detallado,
     alternarTipoGrafico
 };

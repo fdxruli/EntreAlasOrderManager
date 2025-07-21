@@ -11,19 +11,19 @@
   "categories": ["food", "business"],
   "icons": [
     {
-      "src": "/EntreAlasOrderManager/imagen-icono/safeimagekit-logo-entrealas-sep24-2-01_051032.png",
+      "src": "/EntreAlasOrderManager/imagen-icono/logo-entrealas-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/EntreAlasOrderManager/imagen-icono/safeimagekit-logo-entrealas-sep24-2-01_051032.png",
+      "src": "/EntreAlasOrderManager/imagen-icono/logo-entrealas-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/EntreAlasOrderManager/imagen-icono/safeimagekit-logo-entrealas-sep24-2-01_051032.png",
+      "src": "/EntreAlasOrderManager/imagen-icono/logo-entrealas-144x144.png",
       "sizes": "144x144",
       "type": "image/png",
       "purpose": "any"
@@ -32,7 +32,7 @@
   "screenshots": [
     {
       "src": "/EntreAlasOrderManager/screenshots/screen1.webp",
-      "sizes": "1080x1920",
+      "sizes": "1080x2178",
       "type": "image/webp",
       "form_factor": "narrow"
     }
@@ -43,7 +43,7 @@
       "url": "/EntreAlasOrderManager/index.html?new-order",
       "icons": [
         {
-          "src": "/EntreAlasOrderManager/icons/icon-96x96.png",
+          "src": "/EntreAlasOrderManager/imagen-icono/logo-entrealas-96x96.png",
           "sizes": "96x96"
         }
       ]

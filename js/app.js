@@ -3,18 +3,17 @@ if ('serviceWorker' in navigator) {
     const swPath = window.location.host.includes('localhost') ? './sw.js' : '/EntreAlasOrderManager/sw.js';
     navigator.serviceWorker.register(swPath)
       .then(registration => {
-        console.log('SW registrado:', registration);
+        console.log('Service Worker registrado:', registration);
+
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              console.log('Nueva versión disponible!');
-              const updateNotification = document.getElementById('update-notification');
-              updateNotification.style.display = 'block';
-              document.getElementById('update-button').addEventListener('click', () => {
-                newWorker.postMessage('skipWaiting');
-                window.location.reload();
-              });
+              console.log('Nueva versión del Service Worker detectada, activando automáticamente...');
+              // Envía el mensaje para saltar la espera y activa el nuevo Service Worker
+              newWorker.postMessage('skipWaiting');
+              // Recarga la página automáticamente para aplicar la nueva versión
+              window.location.reload();
             }
           });
         });
@@ -23,7 +22,7 @@ if ('serviceWorker' in navigator) {
         console.error('Error al registrar Service Worker:', error);
       });
   });
-}//el 3 aca es por el localhost en el servidor es EntreAlasOrderManager
+}
 
 // Detecta si el navegador soporta instalación PWA
 let deferredPrompt;
@@ -31,11 +30,11 @@ let deferredPrompt;
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPrompt = e;
-  
-  // Muestra tu botón personalizado
+
+  // Muestra tu botón personalizado para instalar la PWA
   const installButton = document.getElementById('install-button');
   installButton.style.display = 'block';
-  
+
   installButton.addEventListener('click', () => {
     deferredPrompt.prompt();
     deferredPrompt.userChoice.then((choiceResult) => {

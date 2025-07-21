@@ -1,5 +1,5 @@
 const APP_PREFIX = self.location.host.includes('localhost') ? '' : '/EntreAlasOrderManager';
-const CACHE_NAME = 'entrealas-app-v2';
+const CACHE_NAME = 'entrealas-app-v2.1';
 const OFFLINE_FALLBACK = `${APP_PREFIX}/index.html`;
 const IMAGE_CACHE = 'entrealas-images-v1';
 const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB

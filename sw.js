@@ -1,5 +1,5 @@
-const APP_PREFIX = self.location.host.includes('localhost') ? '' : '/EntreAlasOrderManager';
-const CACHE_NAME = 'entrealas-app-v2.2';
+const APP_PREFIX = self.location.host.includes('localhost') ? '3' : '/EntreAlasOrderManager';
+const CACHE_NAME = 'entrealas-app-v2.2.1';
 const OFFLINE_FALLBACK = `${APP_PREFIX}/index.html`;
 const IMAGE_CACHE = 'entrealas-images-v1';
 const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB
@@ -17,7 +17,11 @@ const urlsToCache = [
   `${APP_PREFIX}/js/dashboard.js`,
   `${APP_PREFIX}/js/storage.js`,
   `${APP_PREFIX}/js/whatsapp.js`,
-  `${APP_PREFIX}/imagen-icono/safeimagekit-logo-entrealas-sep24-2-01_051032.png`
+  `${APP_PREFIX}/imagen-icono/logo-entrealas-192x192.png`,
+  `${APP_PREFIX}/imagen-icono/logo-entrealas-512x512.png`,
+  `${APP_PREFIX}/imagen-icono/logo-entrealas-144x144.png`,
+  `${APP_PREFIX}/imagen-icono/logo-entrealas-96x96.png`,
+  `${APP_PREFIX}/screenshots/screen1.webp`
 ];
 
 // ===== INSTALACIÓN ===== //
@@ -40,7 +44,7 @@ self.addEventListener('install', (event) => {
 // ===== ACTIVACIÓN ===== //
 self.addEventListener('activate', (event) => {
   console.log('[Service Worker] Activando...');
-
+  
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
@@ -51,9 +55,10 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
-    }).then(() => {
-      console.log('[Service Worker] Forzando limpieza de cachés antiguos completada');
-      return self.clients.claim(); // Asegura que el nuevo SW tome control inmediatamente
+    })
+    .then(() => {
+      console.log('[Service Worker] Clients claim activado');
+      return self.clients.claim();
     })
   );
 });
@@ -143,7 +148,7 @@ function handleImageRequest(request) {
 // ===== MANEJO DE ACTUALIZACIONES ===== //
 self.addEventListener('message', (event) => {
   if (event.data === 'skipWaiting') {
-    console.log('[Service Worker] Recibido mensaje skipWaiting, activando nuevo Service Worker');
+    console.log('[Service Worker] Saltando espera por mensaje');
     self.skipWaiting();
   }
 });

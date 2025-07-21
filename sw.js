@@ -1,5 +1,5 @@
 const APP_PREFIX = self.location.host.includes('localhost') ? '' : '/EntreAlasOrderManager';
-const CACHE_NAME = 'entrealas-app-v2.1';
+const CACHE_NAME = 'entrealas-app-v2.2';
 const OFFLINE_FALLBACK = `${APP_PREFIX}/index.html`;
 const IMAGE_CACHE = 'entrealas-images-v1';
 const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB
@@ -40,7 +40,7 @@ self.addEventListener('install', (event) => {
 // ===== ACTIVACIÓN ===== //
 self.addEventListener('activate', (event) => {
   console.log('[Service Worker] Activando...');
-  
+
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
@@ -51,10 +51,9 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
-    })
-    .then(() => {
-      console.log('[Service Worker] Clients claim activado');
-      return self.clients.claim();
+    }).then(() => {
+      console.log('[Service Worker] Forzando limpieza de cachés antiguos completada');
+      return self.clients.claim(); // Asegura que el nuevo SW tome control inmediatamente
     })
   );
 });

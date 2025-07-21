@@ -31,10 +31,38 @@ const GASTOS_IDS = {
 
 // Configuración de costos de productos
 const COSTOS_PRODUCTOS = {
-    'alitas': { costo: 55, precio: 75 },
-    'boneless': { costo: 45, precio: 70 },
-    'papas': { costo: 15, precio: 35 },
-    'envio': { costo: 0, precio: 0 } // Costo dinámico que se actualizará
+    // Alitas (todas cuestan lo mismo)
+    'alitas bbq': { costo: 55, precio: 75 },
+    'alitas mango habanero': { costo: 55, precio: 75 },
+    'alitas buffalo': { costo: 55, precio: 75 },
+    'alitas queso parmesano': { costo: 55, precio: 75 },
+    'alitas estilo brayan': { costo: 55, precio: 75 },
+
+    // Boneless (todos cuestan lo mismo)
+    'boneless bbq': { costo: 45, precio: 70 },
+    'boneless mango habanero': { costo: 45, precio: 70 },
+    'boneless buffalo': { costo: 45, precio: 70 },
+    'boneless queso parmesano': { costo: 45, precio: 70 },
+
+    // Papas (con costos diferentes)
+    'papas fritas': { costo: 15, precio: 35 },
+    'papas a la francesa': { costo: 10, precio: 25 },
+    'papas con chorizo': { costo: 25, precio: 50 },
+
+    // Bebidas
+    'frappe moka': { costo: 20, precio: 40 },
+    'frappe oreo': { costo: 20, precio: 40 },
+    'frappe chispas chocolate': { costo: 20, precio: 40 },
+    'refresco 600ml': { costo: 10, precio: 35 },
+    'agua mineral': { costo: 5, precio: 25 },
+
+    // Extras
+    'crema batida - chisp chocolate': { costo: 5, precio: 10 },
+    'aderezo extra': { costo: 5, precio: 15 },
+    'zanahorita': { costo: 2, precio: 5 },
+
+    // Envío (sin cambios)
+    'envio': { costo: 0, precio: 0 }
 };
 
 const METAS_CONFIG = {
@@ -68,16 +96,32 @@ const COSTOS_IDS = {
 
 // Función para obtener el costo de un producto
 function obtenerCostoProducto(nombreProducto) {
-    const nombre = nombreProducto.toLowerCase();
+    const nombre = nombreProducto.toLowerCase().trim();
 
-    // Buscar coincidencias en el nombre del producto
+    // Buscar coincidencia exacta primero
+    if (COSTOS_PRODUCTOS[nombre]) {
+        return COSTOS_PRODUCTOS[nombre];
+    }
+
+    // Buscar coincidencias parciales para manejar variaciones
     for (const [key, datos] of Object.entries(COSTOS_PRODUCTOS)) {
         if (nombre.includes(key)) {
             return datos;
         }
     }
 
-    // Si no se encuentra, retornar valores por defecto
+    // Si no se encuentra, usar valores por defecto basados en categoría
+    if (nombre.includes('alitas')) {
+        return { costo: 55, precio: 75 };
+    }
+    if (nombre.includes('boneless')) {
+        return { costo: 45, precio: 70 };
+    }
+    if (nombre.includes('papas')) {
+        return { costo: 15, precio: 35 }; // Valor por defecto para papas
+    }
+
+    // Default para productos desconocidos
     return { costo: 0, precio: 0 };
 }
 
@@ -106,7 +150,7 @@ function actualizarDashboard() {
     const totalPedidos = pedidosFiltrados.length;
     const ticketPromedio = totalPedidos > 0 ? (totalVentas / totalPedidos) : 0;
     const totalDescuentos = calcularTotalDescuentos(pedidosFiltrados);
-    
+
     const {
         topProductos,
         totalProductosVendidos,
@@ -118,7 +162,7 @@ function actualizarDashboard() {
     } = calcularProductosConCostos(pedidosFiltrados, topLimit);
 
     const { totalGastosExternos, totalGastosInventario } = actualizarResumenGastos();
-    
+
     // NUEVA LÓGICA: Calcular utilidad neta considerando gastos de inventario
     let utilidadNeta = totalGanancias - totalGastosExternos;
     let excesoInventario = 0;
@@ -155,9 +199,9 @@ function actualizarDashboard() {
 
 // Función MODIFICADA para actualizar elementos UI
 function actualizarElementosUIConCostos(
-    totalVentas, 
-    totalPedidos, 
-    ticketPromedio, 
+    totalVentas,
+    totalPedidos,
+    ticketPromedio,
     totalDescuentos,
     totalProductosVendidos,
     totalCostos,
@@ -702,7 +746,7 @@ function calcularDiasTranscurridos(tipoMeta) {
 function calcularProyeccion(utilidadActual, tipoMeta) {
     const hoy = new Date();
     let diasTotales, diasTranscurridos;
-    
+
     if (tipoMeta === 'semanal') {
         diasTotales = 7;
         diasTranscurridos = hoy.getDay() || 7; // Si es 0 (domingo), contar como 7
@@ -710,7 +754,7 @@ function calcularProyeccion(utilidadActual, tipoMeta) {
         diasTotales = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0).getDate();
         diasTranscurridos = hoy.getDate();
     }
-    
+
     if (diasTranscurridos === 0) return utilidadActual;
     return (utilidadActual / diasTranscurridos) * diasTotales;
 }
@@ -718,7 +762,7 @@ function calcularProyeccion(utilidadActual, tipoMeta) {
 function generarConsejosMeta(porcentaje, faltante, tipoMeta) {
     let consejos = [];
     const metaLabel = METAS_CONFIG[tipoMeta].label;
-    
+
     if (porcentaje >= 100) {
         consejos.push(`✅ ¡Meta ${metaLabel} alcanzada! Buen trabajo.`);
         consejos.push(`🔝 Considera aumentar tu meta para el próximo período.`);
@@ -732,7 +776,7 @@ function generarConsejosMeta(porcentaje, faltante, tipoMeta) {
         consejos.push(`😟 Estás por debajo del 50% de la meta ${metaLabel}.`);
         consejos.push(`🚀 Necesitas ${formatearMoneda(faltante)} más. Considera acciones inmediatas.`);
     }
-    
+
     // Consejo adicional basado en el tiempo restante
     const hoy = new Date();
     if (tipoMeta === 'semanal' && hoy.getDay() >= 5) { // Viernes o después
@@ -740,7 +784,7 @@ function generarConsejosMeta(porcentaje, faltante, tipoMeta) {
     } else if (tipoMeta === 'mensual' && hoy.getDate() > 25) {
         consejos.push("📅 Final de mes cerca. Revisa gastos y oportunidades finales.");
     }
-    
+
     return consejos.map(c => `<div class="meta-tip">${c}</div>`).join('');
 }
 
@@ -759,7 +803,7 @@ function recalcularMetaDesdeCero() {
     const totalVentas = pedidosFiltrados.reduce((sum, pedido) => sum + (pedido.total || 0), 0);
     const { totalGastosExternos, totalGastosInventario } = actualizarResumenGastos();
     const { totalCostos, totalGanancias } = calcularProductosConCostos(pedidosFiltrados, 10);
-    
+
     // NUEVA LÓGICA: Calcular utilidad neta para la meta
     let utilidadNeta = totalGanancias - totalGastosExternos;
     if (totalGastosInventario > totalCostos) {
@@ -774,7 +818,7 @@ function actualizarMeta(ventasPeriodo, tipoMeta) {
     const config = METAS_CONFIG[tipoMeta];
     const { totalGastosExternos, totalGastosInventario } = actualizarResumenGastos();
     const { totalCostos, totalGanancias } = calcularProductosConCostos(obtenerPedidos(), 10);
-    
+
     // NUEVA LÓGICA: Calcular utilidad neta considerando exceso de inventario
     let utilidadNeta = totalGanancias - totalGastosExternos;
     let excesoInventario = 0;
@@ -790,7 +834,7 @@ function actualizarMeta(ventasPeriodo, tipoMeta) {
 
     const containerId = `meta-${tipoMeta}-container`;
     const container = document.getElementById(containerId);
-    
+
     if (container) {
         container.innerHTML = `
             <div class="meta-header">
@@ -1078,7 +1122,7 @@ function calcularProductosConCostos(pedidos, limite = 10) {
 
                 // Calcular costo total del pedido especial
                 let costoTotalEspecial = 0;
-                
+
                 item.combinaciones.forEach(combinacion => {
                     if (combinacion.producto === 'alitas') {
                         // Alitas siempre por piezas
@@ -1119,8 +1163,8 @@ function calcularProductosConCostos(pedidos, limite = 10) {
                 totalCostos += costoTotalEspecial;
                 totalGanancias += gananciasEspecial;
             } else {
-                // Manejar productos individuales normales (código existente)
-                const nombre = item.nombre ? item.nombre.split('(')[0].trim() : 'Producto sin nombre';
+                // Manejar productos individuales normales
+                const nombre = item.nombre ? item.nombre.toLowerCase().trim() : 'Producto sin nombre';
                 const cantidad = asegurarNumero(item.cantidad);
                 const precio = asegurarNumero(item.precio);
                 const totalVenta = precio * cantidad;
@@ -1157,7 +1201,7 @@ function calcularProductosConCostos(pedidos, limite = 10) {
 
     // Calcular el margen general
     const totalVentasPeriodo = pedidos.reduce((sum, p) => sum + (p.total || 0), 0);
-    const margenGeneral = totalVentasPeriodo > 0 ? 
+    const margenGeneral = totalVentasPeriodo > 0 ?
         ((totalGanancias + gananciasEnvios) / totalVentasPeriodo) * 100 : 0;
 
     // Preparar productos para la tabla
@@ -1290,9 +1334,9 @@ function actualizarTablaProductos(productos, totalVentas) {
 
         row.innerHTML = `
             <td>${producto.nombre}
-                ${producto.nombre === 'Envíos' ? ' <i class="fas fa-truck"></i>' : 
-                 producto.esCombo ? ' <i class="fas fa-box"></i>' : 
-                 producto.esEspecial ? ' <i class="fas fa-star"></i>' : ''}
+                ${producto.nombre === 'Envíos' ? ' <i class="fas fa-truck"></i>' :
+                producto.esCombo ? ' <i class="fas fa-box"></i>' :
+                    producto.esEspecial ? ' <i class="fas fa-star"></i>' : ''}
             </td>
             <td class="text-right">${producto.cantidad.toLocaleString()}</td>
             <td class="text-right">${formatearMoneda(producto.total)}</td>
@@ -1438,7 +1482,7 @@ function enviarResumenDetallado() {
 
         const fechaInicio = new Date(desde);
         const fechaFin = new Date(hasta);
-        
+
         if (isNaN(fechaInicio.getTime()) || isNaN(fechaFin.getTime())) {
             mostrarNotificacion('Fechas no válidas', 'error');
             return;
@@ -1480,7 +1524,7 @@ function enviarResumenDetallado() {
         const totalGastosInventario = gastosFiltrados
             .filter(gasto => gasto.categoria === 'inventario')
             .reduce((sum, gasto) => sum + gasto.monto, 0);
-        
+
         // NUEVA LÓGICA: Calcular utilidad neta y exceso de inventario
         let utilidadNeta = totalGanancias - totalGastosExternos;
         let excesoInventario = 0;
@@ -1509,23 +1553,23 @@ function enviarResumenDetallado() {
                 .filter(p => new Date(p.fecha) <= mitadPeriodo)
                 .reduce((sum, p) => sum + (p.total || 0), 0);
             const ventasSegundaMitad = totalVentas - ventasPrimeraMitad;
-            const cambioPorcentual = ventasPrimeraMitad > 0 ? 
+            const cambioPorcentual = ventasPrimeraMitad > 0 ?
                 ((ventasSegundaMitad - ventasPrimeraMitad) / ventasPrimeraMitad * 100) : 0;
             analisisTendencia = `• Tendencia ventas: ${cambioPorcentual >= 0 ? '↑' : '↓'} ${Math.abs(cambioPorcentual).toFixed(1)}% ` +
-                               `(${formatearMoneda(ventasPrimeraMitad)} → ${formatearMoneda(ventasSegundaMitad)})\n`;
+                `(${formatearMoneda(ventasPrimeraMitad)} → ${formatearMoneda(ventasSegundaMitad)})\n`;
         }
 
         let comparativaPeriodoAnterior = '';
         try {
             const periodoAnterior = calcularComparativaPeriodoAnterior(desde, hasta, pedidos);
             if (periodoAnterior) {
-                const cambioVentas = periodoAnterior.totalVentas > 0 ? 
+                const cambioVentas = periodoAnterior.totalVentas > 0 ?
                     ((totalVentas - periodoAnterior.totalVentas) / periodoAnterior.totalVentas * 100) : 0;
                 comparativaPeriodoAnterior = `• Comparativa con período anterior (${periodoAnterior.dias} días):\n` +
                     `   - Ventas: ${cambioVentas >= 0 ? '+' : ''}${cambioVentas.toFixed(1)}%\n` +
-                    `   - Pedidos: ${periodoAnterior.totalPedidos > 0 ? 
+                    `   - Pedidos: ${periodoAnterior.totalPedidos > 0 ?
                         ((totalPedidos - periodoAnterior.totalPedidos) / periodoAnterior.totalPedidos * 100).toFixed(1) : 'N/A'}%\n` +
-                    `   - Ticket promedio: ${periodoAnterior.ticketPromedio > 0 ? 
+                    `   - Ticket promedio: ${periodoAnterior.ticketPromedio > 0 ?
                         ((promedioTicket - periodoAnterior.ticketPromedio) / periodoAnterior.ticketPromedio * 100).toFixed(1) : 'N/A'}%\n`;
             }
         } catch (e) {
@@ -1655,14 +1699,14 @@ function calcularComparativaPeriodoAnterior(desde, hasta, todosPedidos) {
     const fechaInicio = new Date(desde);
     const fechaFin = new Date(hasta);
     const duracionDias = Math.ceil((fechaFin - fechaInicio) / (1000 * 60 * 60 * 24)) + 1;
-    
+
     // Calcular fechas del período anterior
     const fechaInicioAnterior = new Date(fechaInicio);
     fechaInicioAnterior.setDate(fechaInicio.getDate() - duracionDias);
-    
+
     const fechaFinAnterior = new Date(fechaInicio);
     fechaFinAnterior.setDate(fechaInicio.getDate() - 1);
-    
+
     // Filtrar pedidos del período anterior
     const pedidosAnterior = todosPedidos.filter(pedido => {
         const fechaPedido = new Date(pedido.fecha).toISOString().split('T')[0];
@@ -1670,15 +1714,15 @@ function calcularComparativaPeriodoAnterior(desde, hasta, todosPedidos) {
         const hastaAnterior = fechaFinAnterior.toISOString().split('T')[0];
         return fechaPedido >= desdeAnterior && fechaPedido <= hastaAnterior;
     });
-    
+
     if (pedidosAnterior.length === 0) return null;
-    
+
     // Calcular métricas del período anterior
     const totalVentasAnterior = pedidosAnterior.reduce((sum, p) => sum + (p.total || 0), 0);
     const totalPedidosAnterior = pedidosAnterior.length;
-    const ticketPromedioAnterior = totalPedidosAnterior > 0 ? 
+    const ticketPromedioAnterior = totalPedidosAnterior > 0 ?
         (totalVentasAnterior / totalPedidosAnterior) : 0;
-    
+
     return {
         totalVentas: totalVentasAnterior,
         totalPedidos: totalPedidosAnterior,
@@ -1703,7 +1747,7 @@ function inicializarDashboard() {
     // Configurar valores iniciales para las metas desde METAS_CONFIG
     const elementoMetaMensual = obtenerElemento('meta-mensual-valor');
     const elementoMetaSemanal = obtenerElemento('meta-semanal-valor');
-    
+
     if (elementoMetaMensual) elementoMetaMensual.textContent = formatearMoneda(METAS_CONFIG.mensual.metaGanancias);
     if (elementoMetaSemanal) elementoMetaSemanal.textContent = formatearMoneda(METAS_CONFIG.semanal.metaGanancias);
 

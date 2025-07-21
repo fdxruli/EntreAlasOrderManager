@@ -144,7 +144,7 @@ function handleImageRequest(request) {
 // ===== MANEJO DE ACTUALIZACIONES ===== //
 self.addEventListener('message', (event) => {
   if (event.data === 'skipWaiting') {
-    console.log('[Service Worker] Saltando espera por mensaje');
+    console.log('[Service Worker] Recibido mensaje skipWaiting, activando nuevo Service Worker');
     self.skipWaiting();
   }
 });

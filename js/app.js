@@ -1,47 +1,72 @@
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     const swPath = window.location.host.includes('localhost') ? './sw.js' : '/EntreAlasOrderManager/sw.js';
+    console.log('[App] Intentando registrar Service Worker en:', swPath);
     navigator.serviceWorker.register(swPath)
       .then(registration => {
-        console.log('Service Worker registrado:', registration);
+        console.log('[App] Service Worker registrado:', registration);
+
+        // Solicitar la versión al Service Worker
+        navigator.serviceWorker.controller?.postMessage('GET_VERSION');
 
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              console.log('Nueva versión detectada, recargando automáticamente...');
+              console.log('[App] Nueva versión detectada, recargando...');
               newWorker.postMessage('skipWaiting');
-              // Forzar recarga completa
               setTimeout(() => {
-                window.location.href = window.location.href; // Alternativa a reload(true)
-              }, 1000); // Pequeño retraso para asegurar que skipWaiting se procese
+                window.location.href = window.location.href;
+              }, 1000);
             }
           });
         });
       })
       .catch(error => {
-        console.error('Error al registrar Service Worker:', error);
+        console.error('[App] Error al registrar Service Worker:', error);
       });
+
+    // Escuchar mensajes del Service Worker
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      if (event.data.type === 'VERSION') {
+        const versionElement = document.getElementById('app-version');
+        if (versionElement) {
+          versionElement.textContent = `Versión: ${event.data.version}`;
+          console.log('[App] Versión actualizada:', event.data.version);
+        } else {
+          console.error('[App] Elemento app-version no encontrado en el DOM');
+        }
+      }
+    });
   });
 }
 
-// Detecta si el navegador soporta instalación PWA
 let deferredPrompt;
 
 window.addEventListener('beforeinstallprompt', (e) => {
+  console.log('[App] Evento beforeinstallprompt disparado');
   e.preventDefault();
   deferredPrompt = e;
 
   const installButton = document.getElementById('install-button');
-  installButton.style.display = 'block';
+  if (installButton) {
+    console.log('[App] Mostrando botón de instalación');
+    installButton.style.display = 'block';
+  } else {
+    console.error('[App] Error: Elemento install-button no encontrado en el DOM');
+  }
 
   installButton.addEventListener('click', () => {
+    console.log('[App] Botón de instalación clicado');
     deferredPrompt.prompt();
     deferredPrompt.userChoice.then((choiceResult) => {
       if (choiceResult.outcome === 'accepted') {
-        console.log('Usuario instaló la PWA');
+        console.log('[App] Usuario instaló la PWA');
+      } else {
+        console.log('[App] Usuario rechazó la instalación de la PWA');
       }
       deferredPrompt = null;
+      installButton.style.display = 'none';
     });
   });
 });

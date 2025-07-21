@@ -39,6 +39,12 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+.app-version {
+  font-size: 0.8em;
+  color: #666;
+  margin-bottom: 10px;
+}
+
 /* ============ LAYOUT ============ */
 .app-container {
   display: flex;
@@ -641,75 +647,87 @@ header h1 {
 
 /* Estilos para los botones compactos */
 .pedido-acciones {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
 }
 
 .acciones-superiores {
-    display: flex;
-    gap: 0.5rem;
-    width: 100%;
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
 }
 
 .btn-accion {
-    padding: 0.7rem;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex: 1;
+  padding: 0.7rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
 }
 
 .btn-accion.compacto {
-    min-width: 120px;
-    max-width: 45px;
-    padding: 0.7rem 0;
+  min-width: 120px;
+  max-width: 45px;
+  padding: 0.7rem 0;
 }
 
 .btn-accion.principal {
-    width: 100%;
-    padding: 0.9rem;
-    font-size: 1rem;
+  width: 100%;
+  padding: 0.9rem;
+  font-size: 1rem;
 }
 
 #reiniciar-pedido {
-    background-color: #ff9800;
-    color: white;
+  background-color: #ff9800;
+  color: white;
 }
 
 #btn-nuevo-pedido {
-    background-color: #2196F3;
-    color: white;
+  background-color: #2196F3;
+  color: white;
 }
 
 #vista-previa-btn {
-    background-color: var(--color-secondary);
-    color: white;
-    flex: 2;
+  background-color: var(--color-secondary);
+  color: white;
+  flex: 2;
 }
 
 #enviar-whatsapp {
-    background-color: var(--color-success);
-    color: white;
+  background-color: var(--color-success);
+  color: white;
 }
 
 /* Efectos hover */
 .btn-accion:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-#reiniciar-pedido:hover { background-color: #e68a00; }
-#btn-nuevo-pedido:hover { background-color: #0b7dda; }
-#vista-previa-btn:hover { background-color: #208e82; }
-#enviar-whatsapp:hover { background-color: #51a355; }
+#reiniciar-pedido:hover {
+  background-color: #e68a00;
+}
+
+#btn-nuevo-pedido:hover {
+  background-color: #0b7dda;
+}
+
+#vista-previa-btn:hover {
+  background-color: #208e82;
+}
+
+#enviar-whatsapp:hover {
+  background-color: #51a355;
+}
+
 /*fin*/
 
 #envio-monto {
@@ -1242,21 +1260,22 @@ header h1 {
 .combo-list-table .btn-delete-combo:hover {
   background: rgba(var(--color-danger-rgb), 0.9);
 }
+
 .btn-share-whatsapp {
-    background-color: #25D366;
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    margin: 2px;
-    transition: all 0.3s;
+  background-color: #25D366;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  margin: 2px;
+  transition: all 0.3s;
 }
 
 .btn-share-whatsapp:hover {
-    background-color: #128C7E;
-    transform: scale(1.05);
+  background-color: #128C7E;
+  transform: scale(1.05);
 }
 
 /* Combos panel (outside modal) */
@@ -1370,7 +1389,8 @@ header h1 {
   margin: 15px 0;
 }
 
-.combo-items-table th, .combo-items-table td {
+.combo-items-table th,
+.combo-items-table td {
   border: 1px solid #ddd;
   padding: 8px;
   text-align: left;
@@ -1391,6 +1411,7 @@ header h1 {
   margin: 5px 0;
   font-size: 16px;
 }
+
 /* Estilos para combos en el panel de productos */
 .modal-combos {
   display: flex;
@@ -1400,10 +1421,11 @@ header h1 {
   top: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0,0,0,0.5);
+  background-color: rgba(0, 0, 0, 0.5);
   align-items: center;
   justify-content: center;
 }
+
 .producto-card.combo-card {
   position: relative;
   border-left: 4px solid #ff6b6b;
@@ -1455,6 +1477,7 @@ header h1 {
 .btn-crear-combo:hover {
   background: #3e8e41;
 }
+
 /*fin*/
 
 /* Pedido Especial Modal */
@@ -1932,7 +1955,7 @@ input:disabled {
 
 .metric-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
 .metric-header {
@@ -2083,7 +2106,7 @@ input:disabled {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -2146,7 +2169,7 @@ input:disabled {
   background: #fff;
   border-radius: 10px;
   padding: 15px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   margin-bottom: 20px;
 }
 
@@ -2162,7 +2185,8 @@ input:disabled {
   font-size: 1.2rem;
 }
 
-.meta-stats, .meta-secondary-stats {
+.meta-stats,
+.meta-secondary-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
@@ -2205,7 +2229,7 @@ input:disabled {
 .progress-text {
   color: white;
   font-weight: bold;
-  text-shadow: 0 1px 1px rgba(0,0,0,0.3);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
   font-size: 0.9rem;
 }
 
@@ -2220,6 +2244,7 @@ input:disabled {
   border-radius: 5px;
   margin-bottom: 5px;
 }
+
 /*final de meta en dashboard.js*/
 
 /* Estilos para las tarjetas de meta */
@@ -2243,7 +2268,7 @@ input:disabled {
   padding: 15px;
   background: white;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .meta-details {
@@ -2311,80 +2336,101 @@ input:disabled {
   color: white;
   font-weight: bold;
   font-size: 0.9em;
-  text-shadow: 0 1px 1px rgba(0,0,0,0.3);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
 }
 
-.bg-danger { background-color: #dc3545; }
-.bg-warning { background-color: #ffc107; color: #333; }
-.bg-success { background-color: #28a745; }
+.bg-danger {
+  background-color: #dc3545;
+}
+
+.bg-warning {
+  background-color: #ffc107;
+  color: #333;
+}
+
+.bg-success {
+  background-color: #28a745;
+}
 
 .hidden {
   display: none;
 }
 
+/*estilos de pedido especial de los items en la tabal */
+.especial-row {
+  background-color: #fff9e6;
+}
+
+.especial-row:hover {
+  background-color: #fff2cc;
+}
+
+/**/
+
 /* Estilos para la sección de punto de equilibrio */
 .punto-equilibrio {
-    margin-top: 20px;
-    padding: 15px;
-    background-color: #f8f9fa;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .equilibrio-stats {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 15px;
-    margin-bottom: 15px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  margin-bottom: 15px;
 }
 
 .equilibrio-stats .stat {
-    padding: 10px;
-    background-color: white;
-    border-radius: 5px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  padding: 10px;
+  background-color: white;
+  border-radius: 5px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .equilibrio-stats .stat.highlight {
-    background-color: #e8f5e9;
-    border-left: 4px solid #4CAF50;
+  background-color: #e8f5e9;
+  border-left: 4px solid #4CAF50;
 }
 
 .productos-equilibrio {
-    margin-top: 15px;
+  margin-top: 15px;
 }
 
 .productos-equilibrio h4 {
-    margin-bottom: 10px;
-    color: #555;
-    font-size: 16px;
+  margin-bottom: 10px;
+  color: #555;
+  font-size: 16px;
 }
 
 /* Estilos para las metas mejoradas */
 .meta-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
 }
 
 .meta-badges {
-    display: flex;
-    gap: 8px;
+  display: flex;
+  gap: 8px;
 }
 
 .progress-label {
-    font-size: 12px;
-    color: #666;
-    margin-bottom: 5px;
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 5px;
 }
 
 .meta-secondary-stats {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-    margin-top: 15px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 15px;
 }
+
 /*fin*/
 
 /* Buscar Pedido Modal */
@@ -2638,6 +2684,7 @@ input:disabled {
 .btn-recargar:active {
   transform: scale(0.98);
 }
+
 /*fin*/
 
 /* Estilos para la sección de gastos */
@@ -2656,10 +2703,11 @@ input:disabled {
 }
 
 tr.inventario-row {
-    background-color: rgba(54, 162, 235, 0.1);
+  background-color: rgba(54, 162, 235, 0.1);
 }
+
 tr.externo-row {
-    background-color: rgba(255, 99, 132, 0.1);
+  background-color: rgba(255, 99, 132, 0.1);
 }
 
 /* Notifications */

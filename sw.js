@@ -1,7 +1,7 @@
-const APP_PREFIX = self.location.host.includes('localhost') ? '3' : '/EntreAlasOrderManager';
-const CACHE_NAME = 'entrealas-app-v2.2.1';
-const OFFLINE_FALLBACK = `${APP_PREFIX}/index.html`;
+const CACHE_NAME = 'entrealas-app-v2.2.1'; // Versión de la PWA
 const IMAGE_CACHE = 'entrealas-images-v1';
+const APP_PREFIX = self.location.host.includes('localhost') ? '' : '/EntreAlasOrderManager';
+const OFFLINE_FALLBACK = `${APP_PREFIX}/index.html`;
 const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB
 
 const urlsToCache = [
@@ -27,7 +27,6 @@ const urlsToCache = [
 // ===== INSTALACIÓN ===== //
 self.addEventListener('install', (event) => {
   console.log('[Service Worker] Instalando...');
-  
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
@@ -44,7 +43,6 @@ self.addEventListener('install', (event) => {
 // ===== ACTIVACIÓN ===== //
 self.addEventListener('activate', (event) => {
   console.log('[Service Worker] Activando...');
-  
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
@@ -55,9 +53,17 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
-    })
-    .then(() => {
+    }).then(() => {
       console.log('[Service Worker] Clients claim activado');
+      // Enviar la versión a todos los clientes al activarse
+      self.clients.matchAll().then((clients) => {
+        clients.forEach((client) => {
+          client.postMessage({
+            type: 'VERSION',
+            version: CACHE_NAME
+          });
+        });
+      });
       return self.clients.claim();
     })
   );
@@ -75,7 +81,6 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Normalizar URLs con parámetros para solicitudes HTML
   let cacheKey = request.url;
   if (request.headers.get('accept').includes('text/html')) {
     const url = new URL(request.url);
@@ -124,19 +129,15 @@ function handleImageRequest(request) {
 
           return fetch(request)
             .then((networkResponse) => {
-              // Verifica tamaño antes de cachear
               const contentLength = networkResponse.headers.get('content-length');
-              
               if (contentLength && parseInt(contentLength) < MAX_IMAGE_SIZE) {
                 const clone = networkResponse.clone();
                 cache.put(request, clone)
                   .then(() => console.log(`[Service Worker] Imagen guardada en caché: ${request.url}`));
               }
-
               return networkResponse;
             })
             .catch(() => {
-              // Puedes devolver una imagen placeholder si falla
               return new Response('<svg>...</svg>', {
                 headers: { 'Content-Type': 'image/svg+xml' }
               });
@@ -145,11 +146,21 @@ function handleImageRequest(request) {
     });
 }
 
-// ===== MANEJO DE ACTUALIZACIONES ===== //
+// ===== MANEJO DE ACTUALIZACIONES Y MENSAJES ===== //
 self.addEventListener('message', (event) => {
   if (event.data === 'skipWaiting') {
     console.log('[Service Worker] Saltando espera por mensaje');
     self.skipWaiting();
+  } else if (event.data === 'GET_VERSION') {
+    // Responder con la versión cuando el cliente lo solicite
+    self.clients.matchAll().then((clients) => {
+      clients.forEach((client) => {
+        client.postMessage({
+          type: 'VERSION',
+          version: CACHE_NAME
+        });
+      });
+    });
   }
 });
 

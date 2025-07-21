@@ -1003,6 +1003,18 @@ function calcularProductosConCostos(pedidos, limite = 10) {
     // Obtener combos desde combos.js
     const combos = window.ComboManager ? window.ComboManager.cargarCombosGuardados() : [];
 
+    // Definir costos para productos especiales
+    const COSTOS_ESPECIALES = {
+        alitas: {
+            costoPorPieza: 11,      // Costo por cada alita
+            costoPorGramo: null     // No aplica para alitas
+        },
+        boneless: {
+            costoPorPieza: 15,      // Costo por pieza de boneless
+            costoPorGramo: 0.25     // Costo por gramo de boneless
+        }
+    };
+
     pedidos.forEach(pedido => {
         // Calcular costo de envío si existe
         const costoEnvio = asegurarNumero(pedido.costoEnvio);
@@ -1017,7 +1029,7 @@ function calcularProductosConCostos(pedidos, limite = 10) {
 
         pedido.items.forEach(item => {
             if (item.esCombo && item.comboId) {
-                // Manejar combos
+                // Manejar combos (código existente)
                 const combo = combos.find(c => String(c.id) === String(item.comboId));
                 if (!combo) {
                     console.warn(`Combo con ID ${item.comboId} no encontrado`);
@@ -1026,10 +1038,9 @@ function calcularProductosConCostos(pedidos, limite = 10) {
 
                 const nombre = item.nombre || `Combo ${combo.id}`;
                 const cantidad = asegurarNumero(item.cantidad);
-                const precioVenta = asegurarNumero(item.precio); // Precio del combo
+                const precioVenta = asegurarNumero(item.precio);
                 const totalVenta = precioVenta * cantidad;
 
-                // Calcular costo total del combo sumando los costos unitarios de sus items
                 const costoTotalCombo = combo.items.reduce((sum, comboItem) => {
                     const costoUnitario = asegurarNumero(comboItem.costoUnitario);
                     const cantidadItem = asegurarNumero(comboItem.cantidad);
@@ -1058,14 +1069,62 @@ function calcularProductosConCostos(pedidos, limite = 10) {
                 totalProductosVendidos += cantidad;
                 totalCostos += costoTotalCombo;
                 totalGanancias += gananciasCombo;
+            } else if (item.esEspecial && item.combinaciones) {
+                // Manejar productos especiales (alitas/boneless por piezas o gramos)
+                const nombre = item.nombre;
+                const cantidad = asegurarNumero(item.cantidad);
+                const precioVenta = asegurarNumero(item.precio);
+                const totalVenta = precioVenta * cantidad;
+
+                // Calcular costo total del pedido especial
+                let costoTotalEspecial = 0;
+                
+                item.combinaciones.forEach(combinacion => {
+                    if (combinacion.producto === 'alitas') {
+                        // Alitas siempre por piezas
+                        costoTotalEspecial += combinacion.cantidad * COSTOS_ESPECIALES.alitas.costoPorPieza;
+                    } else if (combinacion.producto === 'boneless') {
+                        // Boneless puede ser por piezas o gramos
+                        if (combinacion.tipoMedida === 'piezas') {
+                            costoTotalEspecial += combinacion.cantidad * COSTOS_ESPECIALES.boneless.costoPorPieza;
+                        } else {
+                            costoTotalEspecial += combinacion.cantidad * COSTOS_ESPECIALES.boneless.costoPorGramo;
+                        }
+                    }
+                });
+
+                // Multiplicar por la cantidad de veces que se pidió este especial
+                costoTotalEspecial *= cantidad;
+                const gananciasEspecial = totalVenta - costoTotalEspecial;
+
+                if (!productosMap[nombre]) {
+                    productosMap[nombre] = {
+                        cantidad: 0,
+                        total: 0,
+                        costo: 0,
+                        ganancias: 0,
+                        costoUnitario: costoTotalEspecial / cantidad,
+                        precioUnitario: precioVenta,
+                        esCombo: false,
+                        esEspecial: true
+                    };
+                }
+
+                productosMap[nombre].cantidad += cantidad;
+                productosMap[nombre].total += totalVenta;
+                productosMap[nombre].costo += costoTotalEspecial;
+                productosMap[nombre].ganancias += gananciasEspecial;
+
+                totalProductosVendidos += cantidad;
+                totalCostos += costoTotalEspecial;
+                totalGanancias += gananciasEspecial;
             } else {
-                // Manejar productos individuales
+                // Manejar productos individuales normales (código existente)
                 const nombre = item.nombre ? item.nombre.split('(')[0].trim() : 'Producto sin nombre';
                 const cantidad = asegurarNumero(item.cantidad);
                 const precio = asegurarNumero(item.precio);
                 const totalVenta = precio * cantidad;
 
-                // Obtener información de costos
                 const datosProducto = obtenerCostoProducto(nombre);
                 const costoUnitario = datosProducto.costo;
                 const costoTotal = costoUnitario * cantidad;
@@ -1083,7 +1142,8 @@ function calcularProductosConCostos(pedidos, limite = 10) {
                         ganancias: 0,
                         costoUnitario: costoUnitario,
                         precioUnitario: precio,
-                        esCombo: false
+                        esCombo: false,
+                        esEspecial: false
                     };
                 }
 
@@ -1100,7 +1160,7 @@ function calcularProductosConCostos(pedidos, limite = 10) {
     const margenGeneral = totalVentasPeriodo > 0 ? 
         ((totalGanancias + gananciasEnvios) / totalVentasPeriodo) * 100 : 0;
 
-    // Preparar productos (incluyendo combos) para la tabla
+    // Preparar productos para la tabla
     const topProductos = Object.entries(productosMap)
         .map(([nombre, datos]) => ({
             nombre,
@@ -1215,10 +1275,13 @@ function actualizarTablaProductos(productos, totalVentas) {
         const porcentajeVentas = totalVentas > 0 ? ((producto.total / totalVentas) * 100).toFixed(1) : '0.0';
         const row = document.createElement('tr');
 
+        // Clases CSS según tipo de producto
         if (producto.nombre === 'Envíos') {
             row.classList.add('envio-row');
         } else if (producto.esCombo) {
             row.classList.add('combo-row');
+        } else if (producto.esEspecial) {
+            row.classList.add('especial-row');
         }
 
         let colorMargen = 'text-success';
@@ -1226,7 +1289,11 @@ function actualizarTablaProductos(productos, totalVentas) {
         else if (producto.margenGanancia < 50) colorMargen = 'text-warning';
 
         row.innerHTML = `
-            <td>${producto.nombre}${producto.nombre === 'Envíos' ? ' <i class="fas fa-truck"></i>' : producto.esCombo ? ' <i class="fas fa-box"></i>' : ''}</td>
+            <td>${producto.nombre}
+                ${producto.nombre === 'Envíos' ? ' <i class="fas fa-truck"></i>' : 
+                 producto.esCombo ? ' <i class="fas fa-box"></i>' : 
+                 producto.esEspecial ? ' <i class="fas fa-star"></i>' : ''}
+            </td>
             <td class="text-right">${producto.cantidad.toLocaleString()}</td>
             <td class="text-right">${formatearMoneda(producto.total)}</td>
             <td class="text-right">${formatearMoneda(producto.costo)}</td>

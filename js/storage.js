@@ -94,6 +94,8 @@ function exportarDatos() {
         const datos = {
             pedidos: StorageUtils.get(STORAGE_KEYS.PEDIDOS, []),
             descuentos: StorageUtils.get(STORAGE_KEYS.DESCUENTOS, {}),
+            combosPromocionales: JSON.parse(localStorage.getItem('combosPromocionales') || '[]'),
+            gastos: JSON.parse(localStorage.getItem('gastos') || '[]'), // Agregar gastos
             configuracion: {
                 pin: localStorage.getItem(STORAGE_KEYS.ADMIN_PIN) || DEFAULT_PIN
             },
@@ -148,6 +150,14 @@ function importarDatos(event) {
             
             if (datos.descuentos && typeof datos.descuentos === 'object') {
                 StorageUtils.set(STORAGE_KEYS.DESCUENTOS, datos.descuentos);
+            }
+            
+            if (datos.combosPromocionales && Array.isArray(datos.combosPromocionales)) {
+                localStorage.setItem('combosPromocionales', JSON.stringify(datos.combosPromocionales));
+            }
+            
+            if (datos.gastos && Array.isArray(datos.gastos)) {
+                localStorage.setItem('gastos', JSON.stringify(datos.gastos));
             }
             
             if (datos.configuracion?.pin) {

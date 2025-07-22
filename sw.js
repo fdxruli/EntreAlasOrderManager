@@ -1,5 +1,5 @@
 const CACHE_NAME = 'entrealas-app-v2.2.2'; // Versión de la PWA
-const IMAGE_CACHE = 'entrealas-images-v1';
+const IMAGE_CACHE = 'entrealas-images-v2';
 const APP_PREFIX = self.location.host.includes('localhost') ? '' : '/EntreAlasOrderManager';
 const OFFLINE_FALLBACK = `${APP_PREFIX}/index.html`;
 const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB
@@ -17,10 +17,9 @@ const urlsToCache = [
   `${APP_PREFIX}/js/dashboard.js`,
   `${APP_PREFIX}/js/storage.js`,
   `${APP_PREFIX}/js/whatsapp.js`,
-  `${APP_PREFIX}/imagen-icono/logo-entrealas-192x192.png`,
-  `${APP_PREFIX}/imagen-icono/logo-entrealas-512x512.png`,
-  `${APP_PREFIX}/imagen-icono/logo-entrealas-144x144.png`,
-  `${APP_PREFIX}/imagen-icono/logo-entrealas-96x96.png`,
+  `${APP_PREFIX}/imagen-icono/logo-entrealas-192x192.svg`,
+  `${APP_PREFIX}/imagen-icono/logo-entrealas-512x512.svg`,
+  `${APP_PREFIX}/imagen-icono/logo-entrealas-96x96.svg`,
   `${APP_PREFIX}/screenshots/screen1.webp`
 ];
 
@@ -171,3 +170,10 @@ self.addEventListener('sync', (event) => {
     // Implementa tu lógica de sync aquí
   }
 });
+
+/*
+supabase
+usuario github
+contraseña:
+aVKJTFGtIizzCwrg
+*/

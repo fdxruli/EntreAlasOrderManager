@@ -1,4 +1,4 @@
-const CACHE_NAME = 'entrealas-app-v2.2.5.1'; // Versión de la PWA
+const CACHE_NAME = 'entrealas-app-v2.2.5.2'; // Versión de la PWA
 const IMAGE_CACHE = 'entrealas-images-v2.2';
 const APP_PREFIX = self.location.host.includes('localhost') ? '' : '/EntreAlasOrderManager';
 const OFFLINE_FALLBACK = `${APP_PREFIX}/index.html`;

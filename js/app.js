@@ -200,7 +200,8 @@ function cargarProductos() {
       { id: 6, nombre: "Boneless BBQ (200g)", precio: 70, imagen: "", gramaje: 200, esCombo: false },
       { id: 7, nombre: "Boneless Mango Habanero (200g)", precio: 70, imagen: "", gramaje: 200, esCombo: false },
       { id: 8, nombre: "Boneless Buffalo (200g)", precio: 70, imagen: "", gramaje: 200, esCombo: false },
-      { id: 9, nombre: "Boneless Queso Parmesano (200g)", precio: 70, imagen: "", gramaje: 200, esCombo: false }
+      { id: 9, nombre: "Boneless Queso Parmesano (200g)", precio: 70, imagen: "", gramaje: 200, esCombo: false },
+      { id: 21, nombre: "Boneless Estilo Eredin (200g)", precio: 70, imagen: "", gramaje: 200, esCombo: false }
     ],
     papas: [
       { id: 10, nombre: "Papas Fritas", precio: 35, imagen: "", esCombo: false },

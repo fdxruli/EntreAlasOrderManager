@@ -3,28 +3,53 @@ async function enviarPedidoWhatsApp() {
         let pedido;
         let esModificacion = false;
 
-        // Determinar si es edición o nuevo pedido
-        if (window.pedidoEnEdicion?.datosEditados && window.pedidoEnEdicion?.codigoOriginal) {
+        // CORRECCIÓN: Mejorar la detección de modificación
+        if (window.pedidoEnEdicion && 
+            window.pedidoEnEdicion.datosEditados && 
+            window.pedidoEnEdicion.codigoOriginal) {
+            
             pedido = window.pedidoEnEdicion.datosEditados;
             esModificacion = true;
+            
+            console.log('🔄 Detectado pedido en modificación:', window.pedidoEnEdicion.codigoOriginal);
+            
+            // Guardar cambios antes de enviar
             guardarCambiosPedido();
+            
+        } else if (window.pedidoActual && window.pedidoActual.estado === 'modificado') {
+            // NUEVA VERIFICACIÓN: Si el pedido actual tiene estado modificado
+            pedido = window.pedidoActual;
+            esModificacion = true;
+            
+            console.log('🔄 Detectado pedido modificado desde pedidoActual:', pedido.codigo);
+            
         } else {
+            // Es un pedido completamente nuevo
             pedido = window.pedidoActual;
             esModificacion = false;
+            
+            console.log('🆕 Detectado pedido nuevo:', pedido?.codigo);
         }
 
         // Validar que haya productos
-        if (pedido.items.length === 0) {
+        if (!pedido || pedido.items.length === 0) {
             mostrarNotificacion('No hay productos en el pedido', 'warning');
             return false;
         }
+
+        // DEBUGGING: Mostrar en consola el tipo de pedido detectado
+        console.log('📊 Tipo de pedido:', esModificacion ? 'MODIFICACIÓN' : 'NUEVO');
+        console.log('📦 Datos del pedido:', pedido);
 
         // Confirmar antes de enviar
         const confirmacion = await mostrarConfirmacionEnvio(esModificacion);
         if (!confirmacion) return false;
 
         // Actualizar notas del pedido
-        pedido.notas = document.getElementById('pedido-notas-input').value;
+        const notasInput = document.getElementById('pedido-notas-input');
+        if (notasInput) {
+            pedido.notas = notasInput.value;
+        }
 
         // Construir mensaje
         const mensaje = construirMensajeWhatsApp(pedido, esModificacion);
@@ -32,27 +57,75 @@ async function enviarPedidoWhatsApp() {
         // Guardar el pedido antes de enviar
         guardarPedidoCompleto(pedido, esModificacion);
 
-        // Enviar por WhatsApp usando el esquema whatsapp:// para modo offline
+        // Enviar por WhatsApp
         const url = `whatsapp://send?text=${encodeURIComponent(mensaje)}`;
         window.open(url, '_blank') || 
             mostrarNotificacion('No se pudo abrir WhatsApp. Asegúrate de tener la aplicación instalada.', 'error', 3000);
 
-        // Limpiar la interfaz
-        limpiarInterfazPedido();
-
-        // Crear nuevo pedido si no es modificación
+        // CORRECCIÓN: No limpiar inmediatamente si es modificación
         if (!esModificacion) {
+            // Solo limpiar si es pedido nuevo
+            limpiarInterfazPedido();
             generarNuevoPedido();
             mostrarNotificacion('Pedido enviado. Nuevo pedido creado.', 'success');
         } else {
+            // Para modificaciones, solo mostrar notificación y limpiar el estado de edición
             mostrarNotificacion('Modificación enviada correctamente', 'success');
+            
+            // Limpiar solo el estado de edición, no toda la interfaz
+            window.pedidoEnEdicion = null;
+            
+            // Restaurar botones a estado normal
+            const btnEnviar = document.getElementById('enviar-whatsapp');
+            const btnCancelar = document.getElementById('cancelar-pedido');
+            
+            if (btnEnviar) btnEnviar.textContent = 'Enviar por WhatsApp';
+            if (btnCancelar) btnCancelar.textContent = 'Cancelar Pedido';
         }
 
         return true;
     } catch (error) {
-        console.error('Error al enviar pedido:', error);
+        console.error('❌ Error al enviar pedido:', error);
         mostrarNotificacion('Error al enviar el pedido. Asegúrate de tener WhatsApp instalado.', 'error', 3000);
         return false;
+    }
+}
+
+// FUNCIÓN AUXILIAR MEJORADA: Detectar si hay un pedido en edición
+function esPedidoEnModificacion() {
+    // Verificar múltiples condiciones para detectar modificación
+    return !!(
+        // Condición 1: Hay un pedido explícitamente en edición
+        (window.pedidoEnEdicion && 
+         window.pedidoEnEdicion.datosEditados && 
+         window.pedidoEnEdicion.codigoOriginal) ||
+        
+        // Condición 2: El pedido actual tiene estado modificado
+        (window.pedidoActual && 
+         window.pedidoActual.estado === 'modificado') ||
+        
+        // Condición 3: El pedido actual tiene historial de cambios
+        (window.pedidoActual && 
+         window.pedidoActual.historial && 
+         window.pedidoActual.historial.length > 0) ||
+         
+        // Condición 4: El pedido actual tiene fecha de modificación
+        (window.pedidoActual && 
+         window.pedidoActual.fechaModificacion)
+    );
+}
+
+// FUNCIÓN DE DEBUG: Agregar para verificar el estado
+function debugEstadoPedido() {
+    console.log('🔍 DEBUG - Estado actual del pedido:');
+    console.log('- pedidoEnEdicion:', window.pedidoEnEdicion);
+    console.log('- pedidoActual:', window.pedidoActual);
+    console.log('- esPedidoEnModificacion():', esPedidoEnModificacion());
+    
+    if (window.pedidoActual) {
+        console.log('- Estado del pedido actual:', window.pedidoActual.estado);
+        console.log('- Historial del pedido:', window.pedidoActual.historial);
+        console.log('- Fecha modificación:', window.pedidoActual.fechaModificacion);
     }
 }
 
@@ -69,8 +142,12 @@ async function mostrarConfirmacionEnvio(esModificacion) {
     });
 }
 
+// FUNCIÓN MEJORADA: Construir mensaje con mejor detección
 function construirMensajeWhatsApp(pedido, esModificacion) {
-    const tipoPedido = esModificacion === true ? 'Actualización de Pedido' : 'Nuevo Pedido';
+    // CORRECCIÓN: Verificar nuevamente si es modificación
+    const esRealmenteModificacion = esModificacion || esPedidoEnModificacion();
+    
+    const tipoPedido = esRealmenteModificacion ? 'Actualización de Pedido' : 'Nuevo Pedido';
     let mensaje = `🛍️ ${tipoPedido} - Entre Alas 🛍️\n\n`;
 
     mensaje += `#️⃣ Código: ${pedido.codigo}\n\n`;
@@ -126,12 +203,14 @@ function construirMensajeWhatsApp(pedido, esModificacion) {
         mensaje += `📝 Notas: ${pedido.notas}\n`;
     }
 
-    if (esModificacion) {
+    // CORRECCIÓN: Mostrar cambios solo si realmente es modificación
+    if (esRealmenteModificacion) {
         mensaje += `📝 Cambios realizados:\n`;
 
         const fechaBase = new Date(
-            pedidoEnEdicion?.datosOriginales?.fechaModificacion ||
-            pedidoEnEdicion?.datosOriginales?.fecha ||
+            window.pedidoEnEdicion?.datosOriginales?.fechaModificacion ||
+            window.pedidoEnEdicion?.datosOriginales?.fecha ||
+            pedido.fechaCreacion ||
             new Date(0)
         );
 
@@ -185,33 +264,39 @@ function obtenerEmojiProducto(nombreProducto) {
     return '🍽️'; // Emoji por defecto
 }
 
+// FUNCIÓN CORREGIDA: Limpiar interfaz sin afectar el estado de edición prematuramente
 function limpiarInterfazPedido() {
     // Limpiar visualmente el resumen del pedido
     const pedidoItemsContainer = document.getElementById('pedido-items');
-    pedidoItemsContainer.innerHTML = '<div class="empty-state">No hay productos agregados</div>';
+    if (pedidoItemsContainer) {
+        pedidoItemsContainer.innerHTML = '<div class="empty-state">No hay productos agregados</div>';
+    }
 
     // Actualizar los totales a cero
-    document.getElementById('subtotal').textContent = '$0.00';
-    document.getElementById('total').textContent = '$0.00';
-
-    // Limpiar el costo de envío
-    document.getElementById('envio-monto').textContent = '$0.00';
+    const subtotalEl = document.getElementById('subtotal');
+    const totalEl = document.getElementById('total');
+    const envioMontoEl = document.getElementById('envio-monto');
+    
+    if (subtotalEl) subtotalEl.textContent = '$0.00';
+    if (totalEl) totalEl.textContent = '$0.00';
+    if (envioMontoEl) envioMontoEl.textContent = '$0.00';
 
     // Resetear botones de envío
     document.querySelectorAll('.btn-envio').forEach(btn => btn.classList.remove('active'));
-    document.querySelector('.btn-envio[data-monto="0"]').classList.add('active');
+    const btnEnvioGratis = document.querySelector('.btn-envio[data-monto="0"]');
+    if (btnEnvioGratis) btnEnvioGratis.classList.add('active');
 
     // Limpiar descuentos aplicados
-    document.getElementById('descuento-aplicado').textContent = '';
-    document.getElementById('codigo-descuento').value = '';
+    const descuentoAplicadoEl = document.getElementById('descuento-aplicado');
+    const codigoDescuentoEl = document.getElementById('codigo-descuento');
+    const notasInputEl = document.getElementById('pedido-notas-input');
+    
+    if (descuentoAplicadoEl) descuentoAplicadoEl.textContent = '';
+    if (codigoDescuentoEl) codigoDescuentoEl.value = '';
+    if (notasInputEl) notasInputEl.value = '';
 
-    // Limpiar notas
-    document.getElementById('pedido-notas-input').value = '';
-
-    // Si hay un pedido en edición, limpiarlo también
-    if (window.pedidoEnEdicion) {
-        window.pedidoEnEdicion = null;
-    }
+    // CORRECCIÓN: Solo limpiar pedidoEnEdicion si no es una modificación activa
+    // No limpiar aquí automáticamente - se hará en enviarPedidoWhatsApp
 }
 
 function guardarPedidoCompleto(pedido, esModificacion) {

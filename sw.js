@@ -1,5 +1,5 @@
-const CACHE_NAME = 'entrealas-app-v2.2.4'; // Versión de la PWA
-const IMAGE_CACHE = 'entrealas-images-v2.1';
+const CACHE_NAME = 'entrealas-app-v2.2.4.1'; // Versión de la PWA
+const IMAGE_CACHE = 'entrealas-images-v2.2';
 const APP_PREFIX = self.location.host.includes('localhost') ? '' : '/EntreAlasOrderManager';
 const OFFLINE_FALLBACK = `${APP_PREFIX}/index.html`;
 const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB

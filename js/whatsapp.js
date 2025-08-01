@@ -301,7 +301,7 @@ function limpiarInterfazPedido() {
 
 function guardarPedidoCompleto(pedido, esModificacion) {
     // Marcar el estado del pedido
-    pedido.estado = esModificacion ? 'modificado' : 'completado';
+    pedido.estado = esModificacion ? 'modificado' : 'en proceso';
     pedido.fechaEnvio = new Date().toISOString();
 
     // Guardar en el historial

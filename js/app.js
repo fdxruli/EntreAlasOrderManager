@@ -1,6 +1,6 @@
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    const swPath = window.location.host.includes('localhost') ? './sw.js' : '/EntreAlasOrderManager/sw.js';
+    const swPath = window.location.host.includes('localhost') ? '' : '/EntreAlasOrderManager/sw.js';
     console.log('[App] Intentando registrar Service Worker en:', swPath);
     navigator.serviceWorker.register(swPath)
       .then(registration => {
@@ -71,6 +71,8 @@ window.addEventListener('beforeinstallprompt', (e) => {
   });
 });
 
+
+
 document.addEventListener('DOMContentLoaded', function () {
   // Inicializar la aplicación
   initApp();
@@ -101,33 +103,33 @@ function initApp() {
   actualizarPedidoUI();
 }
 
+
 function generarNuevoPedido() {
-  const ahora = new Date();
-  const mes = (ahora.getMonth() + 1).toString().padStart(2, '0');
-  const año = ahora.getFullYear().toString().slice(-2);
+    const ahora = new Date();
+    const mes = (ahora.getMonth() + 1).toString().padStart(2, '0');
+    const año = ahora.getFullYear().toString().slice(-2);
 
-  // Generar un código único que no se haya usado este mes
-  const codigo = generarCodigoUnico(mes, año);
-  document.getElementById('pedido-codigo').textContent = codigo;
+    const codigo = generarCodigoUnico(mes, año);
+    document.getElementById('pedido-codigo').textContent = codigo;
 
-  window.pedidoActual = {
-    codigo: codigo,
-    fecha: ahora.toISOString(),
-    items: [],
-    descuento: null,
-    costoEnvio: 0,
-    total: 0,
-    subtotal: 0,
-    notas: '',
-    estado: 'pendiente'
-  };
+    window.pedidoActual = {
+        codigo: codigo,
+        fecha: ahora.toISOString(),
+        items: [],
+        descuento: null,
+        costoEnvio: 0,
+        total: 0,
+        subtotal: 0,
+        notas: '',
+        estado: ESTADOS.EN_PROCESO  // Estado inicial cambiado a "en_proceso"
+    };
 
-  // Resetear UI
-  document.querySelectorAll('.btn-envio').forEach(btn => btn.classList.remove('active'));
-  document.querySelector('.btn-envio[data-monto="0"]').classList.add('active');
-  document.getElementById('pedido-notas-input').value = '';
-  document.getElementById('codigo-descuento').value = '';
-  document.getElementById('descuento-aplicado').textContent = '';
+    // Resetear UI
+    document.querySelectorAll('.btn-envio').forEach(btn => btn.classList.remove('active'));
+    document.querySelector('.btn-envio[data-monto="0"]').classList.add('active');
+    document.getElementById('pedido-notas-input').value = '';
+    document.getElementById('codigo-descuento').value = '';
+    document.getElementById('descuento-aplicado').textContent = '';
 }
 
 function generarCodigoUnico(mes, año) {
@@ -204,9 +206,9 @@ function cargarProductos() {
       { id: 21, nombre: "Boneless Estilo Eredin (200g)", precio: 70, imagen: "", gramaje: 200, esCombo: false }
     ],
     papas: [
-      { id: 10, nombre: "Papas Fritas", precio: 35, imagen: "", esCombo: false },
-      { id: 11, nombre: "Papas a la Francesa", precio: 35, imagen: "", esCombo: false },
-      { id: 12, nombre: "Papas con Chorizo", precio: 50, imagen: "", esCombo: false }
+      { id: 10, nombre: "Papas Fritas Corte Delg.", precio: 35, imagen: "", esCombo: false },
+      { id: 11, nombre: "Papas 100gr", precio: 25, imagen: "", esCombo: false },
+      { id: 12, nombre: "Papas con Salchicha", precio: 50, imagen: "", esCombo: false }
     ],
     bebidas: [
       { id: 13, nombre: "Frappe Moka", precio: 40, imagen: "", esCombo: false },
@@ -362,6 +364,21 @@ function guardarPedidoActual() {
   } catch (error) {
     console.error('Error al guardar el pedido:', error);
     mostrarNotificacion('Error al guardar el pedido', 'error');
+  }
+}
+
+function cargarUltimoPedido() {
+  try {
+    const ultimoPedido = JSON.parse(localStorage.getItem('ultimoPedido'));
+    if (!ultimoPedido || typeof ultimoPedido !== 'object' || !ultimoPedido.items || !Array.isArray(ultimoPedido.items)) {
+      console.warn('Último pedido inválido:', ultimoPedido);
+      localStorage.setItem('ultimoPedido', JSON.stringify(null));
+      return null;
+    }
+    return ultimoPedido;
+  } catch (error) {
+    console.error('Error al cargar último pedido:', error);
+    return null;
   }
 }
 

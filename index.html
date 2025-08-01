@@ -7,10 +7,11 @@
     <title>Admin Pedidos - ENTRE ALAS</title>
     <link rel="stylesheet" href="css/styles.css">
     <script src="libs/chart.js"></script>
+    <script src="libs/date-fns.js"></script>
     <link rel="manifest" href="/EntreAlasOrderManager/manifest.json">
-    <link rel="icon" type="image/png" href="/EntreAlasOrderManager/imagen-icono/logo-entrealas-192x192.svg"
+    <link rel="icon" type="image/png" href="/EntreAlasOrderManager/imagen-icono/logo-entrealas-192x192.png"
         sizes="192x192">
-    <link rel="apple-touch-icon" href="/EntreAlasOrderManager/imagen-icono/logo-entrealas-192x192.svg">
+    <link rel="apple-touch-icon" href="/EntreAlasOrderManager/imagen-icono/logo-entrealas-192x192.png">
 </head>
 
 <body>
@@ -214,381 +215,338 @@
                 <span class="close-modal">&times;</span>
                 <h2><i class="fas fa-chart-line"></i> Dashboard de Ventas</h2>
 
-                <!-- SECCIÓN 1: FILTROS -->
-                <div class="filtros-dashboard card">
-                    <h3><i class="fas fa-filter"></i> Filtros</h3>
-                    <div class="filtros-grid">
-                        <div class="filtro-item">
-                            <label for="filtro-fecha-desde"><i class="far fa-calendar-alt"></i> Desde:</label>
-                            <input type="date" id="filtro-fecha-desde" class="form-control">
-                        </div>
-                        <div class="filtro-item">
-                            <label for="filtro-fecha-hasta"><i class="far fa-calendar-alt"></i> Hasta:</label>
-                            <input type="date" id="filtro-fecha-hasta" class="form-control">
-                        </div>
-                        <div class="filtro-item">
-                            <label for="filtro-top-productos">Mostrar:</label>
-                            <select id="filtro-top-productos" class="form-control">
-                                <option value="5">Top 5</option>
-                                <option value="10" selected>Top 10</option>
-                                <option value="15">Top 15</option>
-                            </select>
-                        </div>
-                        <div class="filtro-item">
-                            <button id="btn-aplicar-filtros" class="btn btn-primary">
-                                <i class="fas fa-check"></i> Aplicar Filtros
-                            </button>
-                        </div>
-                    </div>
+                <!-- Menú de Pestañas -->
+                <div class="tabs-nav">
+                    <button class="tab-button active" data-tab="metricas">Métricas</button>
+                    <button class="tab-button" data-tab="metas">Metas</button>
+                    <button class="tab-button" data-tab="gastos">Gastos y Retiros</button>
+                    <button class="tab-button" data-tab="ventas">Ventas</button>
+                    <button class="tab-button" data-tab="productos">Productos</button>
                 </div>
 
-                <!-- SECCIÓN 2: MÉTRICAS PRINCIPALES -->
-                <div class="metricas-principales">
-                    <h3><i class="fas fa-tachometer-alt"></i> Métricas Principales</h3>
-                    <div class="cards-grid">
-                        <!-- 1. Ventas Totales (lo más importante) -->
-                        <div class="metric-card card highlight">
-                            <div class="metric-header">
-                                <h4><i class="fas fa-dollar-sign"></i> Ventas Totales</h4>
-                            </div>
-                            <div class="metric-value" id="total-ventas">$0.00</div>
-                            <div class="metric-footer">Incluye productos y envíos</div>
+                <!-- Contenido de Pestañas -->
+                <div class="tabs-content">
+                    <!-- Panel de Filtros Colapsable -->
+                    <div class="filtros-panel card collapsible" id="filtros-panel">
+                        <div class="filtros-handle">
+                            <i class="fas fa-grip-lines"></i>
                         </div>
-
-                        <!-- 2. Utilidad Neta (segundo más importante) -->
-                        <div class="metric-card card highlight">
-                            <div class="metric-header">
-                                <h4><i class="fas fa-calculator"></i> Utilidad Neta</h4>
-                            </div>
-                            <div class="metric-value" id="utilidad-neta">$0.00</div>
-                            <div class="metric-footer">Ganancias - Gastos</div>
-                        </div>
-
-                        <div class="metric-card card highlight">
-                            <div class="metric-header">
-                                <h4><i class="fas fa-calculator"></i> dinero en caja </h4>
-                            </div>
-                            <div class="metric-value" id="dinero-caja">$0.00</div>
-                            <div class="metric-footer">total de dinero en caja*</div>
-                        </div>
-
-                        <!-- 3. Ganancias -->
-                        <div class="metric-card card">
-                            <div class="metric-header">
-                                <h4><i class="fas fa-chart-line"></i> Ganancias</h4>
-                            </div>
-                            <div class="metric-value" id="total-ganancias">$0.00</div>
-                            <div class="metric-footer">Antes de gastos</div>
-                        </div>
-
-                        <div class="metric-card card">
-                            <div class="metric-header">
-                                <h4><i class="fas fa-tag"></i> Gastos 2</h4>
-                            </div>
-                            <div class="metric-value" id="total-gastos-inventario">$0.00</div>
-                            <div class="metric-footer">Inventario</div>
-                        </div>
-
-                        <!-- 4. Costos -->
-                        <div class="metric-card card">
-                            <div class="metric-header">
-                                <h4><i class="fas fa-money-bill-wave"></i> Costos</h4>
-                            </div>
-                            <div class="metric-value" id="total-costos">$0.00</div>
-                            <div class="metric-footer">Costos de productos</div>
-                        </div>
-
-                        <!-- 5. Gastos -->
-                        <div class="metric-card card">
-                            <div class="metric-header">
-                                <h4><i class="fas fa-credit-card"></i> Gastos</h4>
-                            </div>
-                            <div class="metric-value" id="total-gastos-externos">$0.00</div>
-                            <div class="metric-footer">Externos</div>
-                        </div>
-
-                        <!-- 6. Envíos -->
-                        <div class="metric-card card">
-                            <div class="metric-header">
-                                <h4><i class="fas fa-truck"></i> Envíos</h4>
-                            </div>
-                            <div id="total-envios" class="metric-value">$0.00</div>
-                            <div class="metric-footer">Ventas: <span id="ganancias-envios"></span></div>
-                        </div>
-
-                        <!-- 7. Margen -->
-                        <div class="metric-card card">
-                            <div class="metric-header">
-                                <h4><i class="fas fa-percentage"></i> Margen</h4>
-                            </div>
-                            <div class="metric-value" id="margen-ganancias">0.0%</div>
-                            <div class="metric-footer">Margen de ganancia</div>
-                        </div>
-
-                        <!-- 8. Pedidos -->
-                        <div class="metric-card card">
-                            <div class="metric-header">
-                                <h4><i class="fas fa-shopping-cart"></i> Pedidos</h4>
-                            </div>
-                            <div class="metric-value" id="total-pedidos">0</div>
-                            <div class="metric-footer">Realizados</div>
-                        </div>
-
-                        <!-- 9. Ticket Promedio -->
-                        <div class="metric-card card">
-                            <div class="metric-header">
-                                <h4><i class="fas fa-receipt"></i> Ticket Promedio</h4>
-                            </div>
-                            <div class="metric-value" id="ticket-promedio">$0.00</div>
-                            <div class="metric-footer">Promedio por venta</div>
-                        </div>
-
-                        <!-- 10. Descuentos -->
-                        <div class="metric-card card">
-                            <div class="metric-header">
-                                <h4><i class="fas fa-tag"></i> Descuentos</h4>
-                            </div>
-                            <div class="metric-value" id="total-descuentos">$0.00</div>
-                            <div class="metric-footer">Total aplicado</div>
-                        </div>
-
-                        <!-- 11. Productos Vendidos -->
-                        <div class="metric-card card">
-                            <div class="metric-header">
-                            </div>
-                            <div class="metric-value" id="total-productos-vendidos">0</div>
-                            <div class="metric-footer">Vendidos</div>
-                        </div>
-
-                        <!-- Acción: Enviar Resumen -->
-                        <button id="btn-enviar-resumen-detallado" class="btn btn-success">
-                            <i class="fas fa-share-alt"></i> Enviar Resumen Detallado
-                        </button>
-                    </div>
-                </div>
-
-                <!-- SECCIÓN 3: METAS Y OBJETIVOS -->
-                <div class="metas-objetivos">
-                    <h3><i class="fas fa-bullseye"></i> Metas y Objetivos</h3>
-                    <div class="metas-container">
-                        <!-- Selector de Meta -->
-                        <div class="card" style="width: 200px;">
-                            <select id="filtro-tipo-meta" class="form-control">
-                                <option value="mensual">Meta Mensual</option>
-                                <option value="semanal">Meta Semanal</option>
-                            </select>
-                        </div>
-
-                        <!-- Meta Mensual -->
-                        <div id="meta-mensual-container" class="card objetivo-meta">
-                            <h4><i class="fas fa-calendar-alt"></i> Meta Mensual</h4>
-
-                            <div class="meta-details">
-                                <div class="meta-row">
-                                    <span class="meta-label">Ventas brutas:</span>
-                                    <span id="ventas-brutas-mes" class="meta-value">$0.00</span>
-                                </div>
-                                <div class="meta-row">
-                                    <span class="meta-label">Gastos:</span>
-                                    <span id="gastos-mes" class="meta-value negative">$0.00</span>
-                                </div>
-                                <div class="meta-row highlight">
-                                    <span class="meta-label">Ventas netas:</span>
-                                    <span id="ventas-netas-mes" class="meta-value positive">$0.00</span>
-                                </div>
-                                <div class="meta-row">
-                                    <span class="meta-label">Meta:</span>
-                                    <span id="meta-mensual" class="meta-value">$30,000.00</span>
-                                </div>
-                            </div>
-
-                            <div class="progress-container">
-                                <div class="progress-labels">
-                                    <span>0%</span>
-                                    <span>Progreso (neto)</span>
-                                    <span>100%</span>
-                                </div>
-                                <div class="progress-bar-container">
-                                    <div id="barra-progreso" class="progress-bar bg-danger" style="width: 0%;">
-                                        <span class="progress-text">0%</span>
+                        <div class="filtros-content">
+                            <h3><i class="fas fa-filter"></i> Filtros</h3>
+                            <div class="filtros-grid">
+                                <div class="filtro-item">
+                                    <label for="filtro-fecha-desde">Desde:</label>
+                                    <div class="input-icon">
+                                        <i class="fas fa-calendar-alt"></i>
+                                        <input type="date" id="filtro-fecha-desde" class="form-control">
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-
-                        <!-- Meta Semanal -->
-                        <div id="meta-semanal-container" class="card objetivo-meta hidden">
-                            <h4><i class="fas fa-calendar-week"></i> Meta Semanal</h4>
-
-                            <div class="meta-details">
-                                <div class="meta-row">
-                                    <span class="meta-label">Ventas brutas:</span>
-                                    <span id="ventas-brutas-semana" class="meta-value">$0.00</span>
-                                </div>
-                                <div class="meta-row">
-                                    <span class="meta-label">Gastos:</span>
-                                    <span id="gastos-semana" class="meta-value negative">$0.00</span>
-                                </div>
-                                <div class="meta-row highlight">
-                                    <span class="meta-label">Ventas netas:</span>
-                                    <span id="ventas-netas-semana" class="meta-value positive">$0.00</span>
-                                </div>
-                                <div class="meta-row">
-                                    <span class="meta-label">Meta:</span>
-                                    <span id="meta-semanal" class="meta-value">$7,500.00</span>
-                                </div>
-                            </div>
-
-                            <div class="progress-container">
-                                <div class="progress-labels">
-                                    <span>0%</span>
-                                    <span>Progreso (neto)</span>
-                                    <span>100%</span>
-                                </div>
-                                <div class="progress-bar-container">
-                                    <div id="barra-progreso-semanal" class="progress-bar bg-danger" style="width: 0%;">
-                                        <span class="progress-text">0%</span>
+                                <div class="filtro-item">
+                                    <label for="filtro-fecha-hasta">Hasta:</label>
+                                    <div class="input-icon">
+                                        <i class="fas fa-calendar-alt"></i>
+                                        <input type="date" id="filtro-fecha-hasta" class="form-control">
                                     </div>
                                 </div>
+                                <div class="filtro-item">
+                                    <label for="filtro-top-productos">Mostrar:</label>
+                                    <div class="input-icon">
+                                        <i class="fas fa-list-ol"></i>
+                                        <select id="filtro-top-productos" class="form-control">
+                                            <option value="5">Top 5</option>
+                                            <option value="10" selected>Top 10</option>
+                                            <option value="15">Top 15</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <button id="aplicar-filtros" class="btn btn-primary">Aplicar Filtro</button>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- SECCIÓN 4: CONTROL DE GASTOS -->
-                <div class="gastos-section">
-                    <h3><i class="fas fa-money-bill-wave"></i> Control de Gastos</h3>
-
-                    <!-- Formulario de Gastos -->
-                    <div class="card">
-                        <h4><i class="fas fa-plus-circle"></i> Agregar Gasto</h4>
-                        <form id="formulario-gasto">
-                            <div class="form-row">
-                                <div>
-                                    <label for="fecha-gasto">Fecha</label>
-                                    <input type="date" id="fecha-gasto" class="form-control" required>
+                    <!-- Pestaña 1: Métricas Principales -->
+                    <div class="tab-pane active" id="metricas">
+                        <div class="metricas-principales">
+                            <h3><i class="fas fa-tachometer-alt"></i> Métricas Principales</h3>
+                            <div class="cards-grid">
+                                <!-- Métricas principales -->
+                                <div class="metric-card card highlight">
+                                    <div class="metric-header">
+                                        <h4>Ventas Totales</h4>
+                                    </div>
+                                    <div class="metric-value" id="total-ventas">$0.00</div>
+                                    <div class="metric-footer">Incluye productos y envíos</div>
                                 </div>
-                                <div>
-                                    <label for="monto-gasto">Monto</label>
-                                    <input type="number" id="monto-gasto" class="form-control" step="0.01" min="0"
-                                        required>
+                                <div class="metric-card card highlight">
+                                    <div class="metric-header">
+                                        <h4>Utilidad Neta</h4>
+                                    </div>
+                                    <div class="metric-value" id="utilidad-neta">$0.00</div>
+                                    <div class="metric-footer">Ganancias - Gastos</div>
                                 </div>
-                                <div>
-                                    <label for="tipo-gasto">Tipo</label>
-                                    <select id="tipo-gasto" class="form-control" required>
-                                        <option value="">Seleccionar...</option>
-                                        ${GASTOS_TIPOS.map(tipo => `<option value="${tipo.nombre}">${tipo.nombre}
-                                        </option>`).join('')}
-                                    </select>
+                                <div class="metric-card card highlight">
+                                    <div class="metric-header">
+                                        <h4>Dinero en Caja</h4>
+                                    </div>
+                                    <div class="metric-value" id="dinero-caja">$0.00</div>
+                                    <div class="metric-footer">Total de dinero en caja</div>
                                 </div>
-                                <div>
-                                    <label for="categoria-gasto">Categoría</label>
-                                    <input type="text" id="categoria-gasto" class="form-control" readonly>
+                                <!-- Métricas secundarias -->
+                                <div class="metricas-secundarias cards-grid hidden">
+                                    <div class="metric-card card">
+                                        <div class="metric-header">
+                                            <h4>Ganancias</h4>
+                                        </div>
+                                        <div class="metric-value" id="total-ganancias">$0.00</div>
+                                        <div class="metric-footer">Antes de gastos</div>
+                                    </div>
+                                    <div class="metric-card card">
+                                        <div class="metric-header">
+                                            <h4>Gastos Inventario</h4>
+                                        </div>
+                                        <div class="metric-value" id="total-gastos-inventario">$0.00</div>
+                                        <div class="metric-footer">Inventario</div>
+                                    </div>
+                                    <div class="metric-card card">
+                                        <div class="metric-header">
+                                            <h4>Costos</h4>
+                                        </div>
+                                        <div class="metric-value" id="total-costos">$0.00</div>
+                                        <div class="metric-footer">Costos de productos</div>
+                                    </div>
+                                    <div class="metric-card card">
+                                        <div class="metric-header">
+                                            <h4>Gastos Externos</h4>
+                                        </div>
+                                        <div class="metric-value" id="total-gastos-externos">$0.00</div>
+                                        <div class="metric-footer">Externos</div>
+                                    </div>
+                                    <div class="metric-card card">
+                                        <div class="metric-header">
+                                            <h4>Retiros</h4>
+                                        </div>
+                                        <div class="metric-value" id="total-retiros">$0.00</div>
+                                        <div class="metric-footer">Retiros de caja</div>
+                                    </div>
+                                    <div class="metric-card card">
+                                        <div class="metric-header">
+                                            <h4>Envíos</h4>
+                                        </div>
+                                        <div class="metric-value" id="total-envios">$0.00</div>
+                                        <div class="metric-footer">Ventas: <span id="ganancias-envios"></span></div>
+                                    </div>
+                                    <div class="metric-card card">
+                                        <div class="metric-header">
+                                            <h4>Margen</h4>
+                                        </div>
+                                        <div class="metric-value" id="margen-ganancias">0.0%</div>
+                                        <div class="metric-footer">Margen de ganancia</div>
+                                    </div>
+                                    <div class="metric-card card">
+                                        <div class="metric-header">
+                                            <h4>Pedidos</h4>
+                                        </div>
+                                        <div class="metric-value" id="total-pedidos">0</div>
+                                        <div class="metric-footer">Realizados</div>
+                                    </div>
+                                    <div class="metric-card card">
+                                        <div class="metric-header">
+                                            <h4>Ticket Promedio</h4>
+                                        </div>
+                                        <div class="metric-value" id="ticket-promedio">$0.00</div>
+                                        <div class="metric-footer">Promedio por venta</div>
+                                    </div>
+                                    <div class="metric-card card">
+                                        <div class="metric-header">
+                                            <h4>Descuentos</h4>
+                                        </div>
+                                        <div class="metric-value" id="total-descuentos">$0.00</div>
+                                        <div class="metric-footer">Total aplicado</div>
+                                    </div>
+                                    <div class="metric-card card">
+                                        <div class="metric-header">
+                                            <h4>Productos Vendidos</h4>
+                                        </div>
+                                        <div class="metric-value" id="total-productos-vendidos">0</div>
+                                        <div class="metric-footer">Vendidos</div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <label for="descripcion-gasto">Descripción</label>
-                                    <input type="text" id="descripcion-gasto" class="form-control">
-                                </div>
-                                <div>
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="fas fa-plus"></i> Agregar
+                                <!-- Botón para mostrar más métricas -->
+                                <div class="button-group">
+                                    <button class="btn btn-outline" id="toggle-metricas">Mostrar más métricas</button>
+                                    <button id="btn-enviar-resumen-detallado" class="btn btn-success">
+                                        <i class="fas fa-share-alt"></i> Enviar Resumen
+                                    </button>
+                                    <button id="btn-ajustar-caja" class="btn btn-warning">
+                                        <i class="fas fa-cash-register"></i> Ajustar Caja
                                     </button>
                                 </div>
                             </div>
-                        </form>
-                    </div>
-
-                    <!-- Distribución de Gastos -->
-                    <div class="card">
-                        <h4><i class="fas fa-chart-pie"></i> Distribución de Gastos</h4>
-                        <div class="chart-container">
-                            <canvas id="grafico-gastos"></canvas>
                         </div>
                     </div>
 
-                    <!-- Tabla de Gastos -->
-                    <div class="card">
-                        <h4><i class="fas fa-list"></i> Historial de Gastos</h4>
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <table id="tabla-gastos" class="table">
-                                    <thead>
-                                        <tr>
-                                            <th>Fecha</th>
-                                            <th>Tipo</th>
-                                            <th>Categoría</th>
-                                            <th>Monto</th>
-                                            <th>Descripción</th>
-                                            <th>Fecha Registro</th>
-                                            <th>Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody></tbody>
-                                </table>
-                                <tbody id="tabla-gastos"></tbody>
-                            </table>
+                    <!-- Pestaña 2: Metas y Objetivos -->
+                    <div class="tab-pane" id="metas">
+                        <div class="metas-objetivos">
+                            <h3><i class="fas fa-bullseye"></i> Metas y Objetivos</h3>
+                            <div class="metas-container">
+                                <div class="card" style="width: 200px;">
+                                    <select id="filtro-tipo-meta" class="form-control">
+                                        <option value="mensual">Meta Mensual</option>
+                                        <option value="semanal">Meta Semanal</option>
+                                    </select>
+                                </div>
+                                <div id="meta-mensual-container" class="card objetivo-meta"></div>
+                                <div id="meta-semanal-container" class="card objetivo-meta hidden"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pestaña 3: Control de Gastos y Retiros -->
+                    <div class="tab-pane" id="gastos">
+                        <div class="gastos-section">
+                            <h3><i class="fas fa-money-bill-wave"></i> Control de Gastos y Retiros</h3>
+                            <div class="card">
+                                <h4><i class="fas fa-plus-circle"></i> Agregar Gasto</h4>
+                                <form id="formulario-gasto">
+                                    <div class="form-row">
+                                        <div><label for="fecha-gasto">Fecha</label><input type="date" id="fecha-gasto"
+                                                class="form-control" required></div>
+                                        <div><label for="monto-gasto">Monto</label><input type="number" id="monto-gasto"
+                                                class="form-control" step="0.01" min="0" required></div>
+                                        <div><label for="tipo-gasto">Tipo</label><select id="tipo-gasto"
+                                                class="form-control" required></select></div>
+                                        <div><label for="categoria-gasto">Categoría</label><input type="text"
+                                                id="categoria-gasto" class="form-control" readonly></div>
+                                        <div><label for="descripcion-gasto">Descripción</label><input type="text"
+                                                id="descripcion-gasto" class="form-control"></div>
+                                        <div><button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i>
+                                                Agregar</button></div>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="card">
+                                <h4><i class="fas fa-money-check-alt"></i> Retirar Dinero de Caja</h4>
+                                <form id="formulario-retiro">
+                                    <div class="form-row">
+                                        <div><label for="fecha-retiro">Fecha</label><input type="date" id="fecha-retiro"
+                                                class="form-control" required></div>
+                                        <div><label for="monto-retiro">Monto</label><input type="number"
+                                                id="monto-retiro" class="form-control" step="0.01" min="0" required>
+                                        </div>
+                                        <div><label for="descripcion-retiro">Descripción</label><input type="text"
+                                                id="descripcion-retiro" class="form-control"></div>
+                                        <div>
+                                            <button type="submit" class="btn btn-warning"><i
+                                                    class="fas fa-money-bill"></i> Retirar</button>
+                                            <button type="button" id="btn-retiro-utilidad-neta" class="btn btn-success"
+                                                disabled><i class="fas fa-wallet"></i> Retirar Utilidad Neta</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="card">
+                                <h4><i class="fas fa-chart-pie"></i> Distribución de Gastos</h4>
+                                <div class="chart-container"><canvas id="grafico-gastos"></canvas></div>
+                            </div>
+                            <div class="card">
+                                <h4><i class="fas fa-list"></i> Historial de Gastos</h4>
+                                <div class="table-responsive">
+                                    <table id="tabla-gastos" class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>Fecha</th>
+                                                <th>Tipo</th>
+                                                <th>Categoría</th>
+                                                <th>Monto</th>
+                                                <th>Descripción</th>
+                                                <th>Fecha Registro</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <h4><i class="fas fa-money-bill"></i> Historial de Retiros</h4>
+                                <div class="metric-card card">
+                                    <div class="metric-header">
+                                        <h4>Total Retirado</h4>
+                                    </div>
+                                    <div class="metric-value" id="total-retiros">$0.00</div>
+                                    <div class="metric-footer">Total retirado de caja</div>
+                                </div>
+                                <div class="table-responsive">
+                                    <table id="tabla-retiros" class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>Fecha</th>
+                                                <th>Monto</th>
+                                                <th>Descripción</th>
+                                                <th>Fecha Registro</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pestaña 4: Análisis de Ventas -->
+                    <div class="tab-pane" id="ventas">
+                        <div class="graficos-ventas">
+                            <h3><i class="fas fa-chart-bar"></i> Análisis de Ventas</h3>
+                            <div class="card">
+                                <div class="section-header">
+                                    <h4><i class="fas fa-chart-line"></i> Tendencia de Ventas</h4>
+                                    <button class="btn btn-sm btn-outline" id="btn-cambiar-grafico"><i
+                                            class="fas fa-exchange-alt"></i> Cambiar Vista</button>
+                                </div>
+                                <div class="chart-container"><canvas id="ventas-chart"></canvas></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pestaña 5: Productos Más Vendidos -->
+                    <div class="tab-pane" id="productos">
+                        <div class="productos-vendidos">
+                            <h3><i class="fas fa-star"></i> Productos Más Vendidos</h3>
+                            <div class="card">
+                                <div class="section-header">
+                                    <h4><i class="fas fa-chart-pie"></i> Distribución por Productos</h4>
+                                    <span class="badge" id="total-productos-vendidos">0 productos</span>
+                                </div>
+                                <div class="chart-container"><canvas id="chart-pie-productos"></canvas></div>
+                            </div>
+                            <div class="card">
+                                <h4><i class="fas fa-table"></i> Detalles de Productos</h4>
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Producto</th>
+                                                <th class="text-right">Cantidad</th>
+                                                <th class="text-right">Ventas</th>
+                                                <th class="text-right">Costos</th>
+                                                <th class="text-right">Ganancias</th>
+                                                <th class="text-right">Margen</th>
+                                                <th class="text-right">% Ventas</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tabla-productos-costos"></tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-
-                <!-- SECCIÓN 5: GRÁFICOS DE VENTAS -->
-                <div class="graficos-ventas">
-                    <h3><i class="fas fa-chart-bar"></i> Análisis de Ventas</h3>
-
-                    <!-- Tendencia de Ventas -->
-                    <div class="card">
-                        <div class="section-header">
-                            <h4><i class="fas fa-chart-line"></i> Tendencia de Ventas</h4>
-                            <button class="btn btn-sm btn-outline" id="btn-cambiar-grafico">
-                                <i class="fas fa-exchange-alt"></i> Cambiar Vista
-                            </button>
-                        </div>
-                        <div class="chart-container">
-                            <canvas id="ventas-chart"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- SECCIÓN 6: PRODUCTOS MÁS VENDIDOS -->
-                <div class="productos-vendidos">
-                    <h3><i class="fas fa-star"></i> Productos Más Vendidos</h3>
-
-                    <!-- Gráfico de Productos -->
-                    <div class="card">
-                        <div class="section-header">
-                            <h4><i class="fas fa-chart-pie"></i> Distribución por Productos</h4>
-                            <span class="badge" id="total-productos-vendidos">0 productos</span>
-                        </div>
-                        <div class="chart-container">
-                            <canvas id="chart-pie-productos"></canvas>
-                        </div>
-                    </div>
-
-                    <!-- Tabla de Productos -->
-                    <div class="card">
-                        <h4><i class="fas fa-table"></i> Detalles de Productos</h4>
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead class="table-header">
-                                    <tr>
-                                        <th>Producto</th>
-                                        <th class="text-right">Cantidad</th>
-                                        <th class="text-right">Ventas</th>
-                                        <th class="text-right">Costos</th>
-                                        <th class="text-right">Ganancias</th>
-                                        <th class="text-right">Margen</th>
-                                        <th class="text-right">% Ventas</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tabla-productos-costos"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
             </div>
         </div>
 
+        <!-- buscar, editar y asignar estado a los pedidos -->
         <div class="modal" id="buscar-pedido-modal">
             <div class="modal-content">
                 <div class="modal-header">
@@ -674,14 +632,14 @@
                 </div>
             </div>
         </div>
-
+        <div id="notificaciones"></div>
     </div>
     </div>
     <!-- Scripts -->
     <script src="js/pedidos.js"></script>
     <script src="js/combo.js"></script>
     <script src="js/descuentos.js"></script>
-    <script src="js/dashboard.js"></script>
+    <script src="js/dashboard.js" defer></script>
     <script src="js/storage.js"></script>
     <script src="js/whatsapp.js"></script>
     <script src="js/app.js"></script>

@@ -17,6 +17,28 @@
   --color-danger-rgb: 239, 83, 80;
 }
 
+/*  =========== stylos para que no se active la seleccion de textos ========== */
+/* Desactivar selección de texto en toda la aplicación */
+* {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Permitir selección solo en campos de entrada donde sea necesario */
+input,
+textarea,
+.selectable {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
+/*fin*/
+
+
 /* ============ BASE STYLES ============ */
 * {
   box-sizing: border-box;
@@ -1811,28 +1833,6 @@ input:disabled {
   cursor: not-allowed;
 }
 
-/* Responsive para móviles */
-@media (max-width: 768px) {
-  .metricas-principales .cards-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1.5rem;
-    margin-top: 1.5rem;
-  }
-
-  .botones-accion {
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .btn-editar-descuento,
-  .btn-whatsapp,
-  .btn-eliminar-descuento {
-    padding: 6px 10px;
-    font-size: 12px;
-  }
-}
-
 /* Estilos para el filtro y contador */
 .filtro-contenedor {
   display: flex;
@@ -1935,66 +1935,197 @@ input:disabled {
 }
 
 /* Estilos para las métricas principales */
-.cards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 15px;
-  margin-top: 20px;
+.tabs-nav {
+  display: flex;
+  border-bottom: 2px solid #ddd;
+  margin-bottom: 20px;
 }
 
-.metric-card {
-  padding: 15px;
+.tab-button {
+  padding: 10px 20px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: #666;
+  transition: color 0.3s, border-bottom 0.3s;
+}
+
+.tab-button.active {
+  color: #007bff;
+  border-bottom: 2px solid #007bff;
+}
+
+.tab-button:hover {
+  color: #0056b3;
+}
+
+.tab-pane {
+  display: none;
+}
+
+.tab-pane.active {
+  display: block;
+}
+
+.card {
+  background: white;
   border-radius: 8px;
-  transition: transform 0.3s ease;
+  padding: 15px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
-
-.metric-card.highlight {
-  border: 2px solid #4CAF50;
-  background-color: #f8fff8;
-}
-
-.metric-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+/*
+.cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+    }
+*/
+.metric-card {
+  text-align: center;
 }
 
 .metric-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 10px;
-  color: #555;
-}
-
-.metric-header h4 {
-  margin: 0;
   font-size: 16px;
-}
-
-.metric-header i {
-  margin-right: 8px;
-  font-size: 18px;
+  color: #555;
 }
 
 .metric-value {
   font-size: 24px;
   font-weight: bold;
+  color: #333;
   margin: 10px 0;
 }
 
 .metric-value.positive {
-  color: #4CAF50;
+  color: #28a745;
 }
 
 .metric-value.negative {
-  color: #F44336;
+  color: #dc3545;
 }
 
 .metric-footer {
   font-size: 12px;
-  color: #777;
-  border-top: 1px solid #eee;
-  padding-top: 8px;
+  color: #888;
 }
+/*esta parte corresponde al filtro de dashboard*/
+.form-control {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .filtros-panel {
+      position: relative;
+      margin-bottom: 20px;
+      transition: all 0.3s ease-in-out;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+    .filtros-panel.collapsed {
+      height: 40px;
+    }
+
+    .filtros-panel .filtros-content {
+      padding: 15px;
+      opacity: 1;
+      transition: opacity 0.3s ease-in-out;
+    }
+
+    .filtros-panel.collapsed .filtros-content {
+      opacity: 0;
+      height: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .filtros-panel.active {
+    max-height: 500px;
+}
+
+    .filtros-handle {
+      position: absolute;
+      top: 10px;
+      left: 15px;
+      cursor: grab;
+      font-size: 20px;
+      color: #666;
+      transition: color 0.3s, transform 0.2s;
+      z-index: 10;
+    }
+
+    .filtros-handle:hover,
+    .filtros-panel:hover .filtros-handle {
+      color: #007bff;
+      transform: scale(1.1);
+    }
+
+    .filtros-panel:hover .filtros-content,
+    .filtros-panel.active .filtros-content {
+      opacity: 1;
+    }
+
+    .input-icon {
+      position: relative;
+    }
+
+    .input-icon i {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #999;
+    }
+
+    .input-icon input,
+    .input-icon select {
+      padding-left: 35px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      transition: border-color 0.3s;
+    }
+
+    .input-icon input:focus,
+    .input-icon select:focus {
+      border-color: #007bff;
+      box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+    }
+
+    .filtros-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+    }
+
+    @keyframes filterApplied {
+      0% { border-color: #007bff; box-shadow: 0 0 10px rgba(0, 123, 255, 0.5); }
+      100% { border-color: #ddd; box-shadow: none; }
+    }
+
+    .filtros-panel.applied .filtros-content {
+      animation: filterApplied 0.5s ease;
+    }
+/*fin*/
+
+/*modal ajuste caja*/
+/* Estilos para el modal de ajuste de caja */
+
+/*ajuste caja fin*/
+
+/*fin*/
 
 #btn-enviar-resumen-detallado {
   grid-column: span 2;
@@ -2163,6 +2294,47 @@ input:disabled {
 .btn-option i {
   margin-right: 8px;
 }
+
+/*mejorar la aparecia de todo el modal dashboard*/
+/* Estilo de pestañas */
+.tabs-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 15px;
+  border-bottom: 2px solid #ddd;
+}
+
+.tab-button {
+  flex: 1;
+  padding: 10px;
+  background: #f5f5f5;
+  border: none;
+  cursor: pointer;
+  text-align: center;
+  font-size: 14px;
+  transition: background 0.3s, color 0.3s;
+}
+
+.tab-button.active {
+  background: #007bff;
+  color: white;
+  font-weight: bold;
+}
+
+.tab-button:hover {
+  background: #e0e0e0;
+}
+
+.tab-pane {
+  display: none;
+}
+
+.tab-pane.active {
+  display: block;
+}
+
+/*fin*/
 
 /*metas echas en dashboar */
 .meta-container {
@@ -2366,44 +2538,6 @@ input:disabled {
 }
 
 /**/
-
-/* Estilos para la sección de punto de equilibrio */
-.punto-equilibrio {
-  margin-top: 20px;
-  padding: 15px;
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.equilibrio-stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 15px;
-  margin-bottom: 15px;
-}
-
-.equilibrio-stats .stat {
-  padding: 10px;
-  background-color: white;
-  border-radius: 5px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.equilibrio-stats .stat.highlight {
-  background-color: #e8f5e9;
-  border-left: 4px solid #4CAF50;
-}
-
-.productos-equilibrio {
-  margin-top: 15px;
-}
-
-.productos-equilibrio h4 {
-  margin-bottom: 10px;
-  color: #555;
-  font-size: 16px;
-}
 
 /* Estilos para las metas mejoradas */
 .meta-header {
@@ -2654,6 +2788,24 @@ input:disabled {
   display: none;
 }
 
+/*estylos para animaciones en modal de reloj*/
+@keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0.3; }
+    100% { opacity: 1; }
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+.tiempo-transcurrido {
+    transition: background-color 0.5s ease;
+}
+/**/
+
 /*boton recargar en pedido modal*/
 .controles-lista {
   display: flex;
@@ -2685,6 +2837,119 @@ input:disabled {
   transform: scale(0.98);
 }
 
+.btn-guardar {
+  background-color: #28a745;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-guardar:hover {
+  background-color: #218838;
+}
+
+/*fin*/
+
+/*stylos de modal pedidos tiempo*/
+.estado-en_proceso {
+  color: #17a2b8;
+  font-weight: bold;
+}
+
+.pedido-modal {
+  max-width: 500px;
+  width: 90%;
+}
+
+.tiempo-transcurrido {
+  font-size: 2rem;
+  font-family: 'Courier New', monospace;
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  text-align: center;
+  margin: 20px 0;
+}
+
+.tiempo-transcurrido span {
+  font-size: 2.5rem;
+  font-weight: bold;
+  font-family: monospace;
+  color: #333;
+}
+
+.pedido-productos-container {
+  margin: 20px 0;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.producto-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.pedido-total {
+  text-align: right;
+  font-size: 1.2rem;
+  margin: 15px 0;
+  padding-top: 15px;
+  border-top: 2px solid #eee;
+}
+
+.btn-completar {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  font-size: 1.1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s;
+  width: 100%;
+  margin-top: 20px;
+}
+
+.btn-completar:hover {
+  background-color: #218838;
+}
+
+.btn-completar:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+.btn-completar i {
+  margin-right: 8px;
+}
+
+.tiempo-transcurrido {
+  padding: 10px;
+  border-radius: 5px;
+  color: white;
+  font-weight: bold;
+  text-align: center;
+  transition: background-color 0.5s ease;
+  margin-bottom: 10px;
+}
+
+.tiempo-mensaje {
+  font-size: 0.8em;
+  margin-top: 5px;
+  font-weight: normal;
+}
+
+.tiempo-meta {
+  text-align: center;
+  color: #6c757d;
+  font-style: italic;
+  margin-bottom: 15px;
+}
+
 /*fin*/
 
 /* Estilos para la sección de gastos */
@@ -2708,6 +2973,17 @@ tr.inventario-row {
 
 tr.externo-row {
   background-color: rgba(255, 99, 132, 0.1);
+}
+
+#btn-retiro-utilidad-neta {
+    background-color: #28a745;
+    border-color: #28a745;
+    margin: 10px;
+}
+
+#btn-retiro-utilidad-neta:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 /* Notifications */
@@ -2827,6 +3103,12 @@ tr.externo-row {
 @media (max-width: 1024px) {
   header {
     padding: 1rem 1.5rem;
+  }
+
+  .categorias-list {
+    flex-direction: row;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
   }
 
   header h1 {
@@ -2997,11 +3279,50 @@ tr.externo-row {
   .metas-container {
     flex-direction: column;
   }
+
+
+
+  .categorias-list {
+    flex-direction: row;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+  }
+
+  .botones-accion {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .btn-editar-descuento,
+  .btn-whatsapp,
+  .btn-eliminar-descuento {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  /*dash*/
+.filtros-panel {
+        width: 100%;
+      }
+      .filtros-panel.collapsed {
+        height: 30px;
+      }
+      .filtros-handle {
+        top: 5px;
+        left: 10px;
+      }
+  /*fin*/
 }
 
 @media (max-width: 480px) {
   .productos-list {
     grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  }
+
+  .categorias-list {
+    flex-direction: row;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
   }
 
   .producto-img {
@@ -3040,6 +3361,7 @@ tr.externo-row {
     margin-right: 0;
     padding-right: 0;
   }
+
 
   .pedido-acciones button {
     min-width: calc(50% - 0.375rem);

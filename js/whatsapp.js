@@ -174,9 +174,7 @@ function construirMensajeWhatsApp(pedido, esModificacion) {
             mensaje += `${emoji} ${item.cantidad}x ${item.nombre} - $${(item.precio * item.cantidad).toFixed(2)}\n`;
         }
     });
-
-    mensaje += `\n💵 Subtotal: $${pedido.subtotal.toFixed(2)}\n`;
-
+    
     const resultadoDescuento = calcularTotalConDescuento();
     const descuentoMonto = resultadoDescuento.descuento;
     const contieneCombos = pedido.items.some(item => item.esCombo === true);
@@ -197,10 +195,10 @@ function construirMensajeWhatsApp(pedido, esModificacion) {
     mensaje += `💵 Total: $${pedido.total.toFixed(2)}\n\n`;
 
     mensaje += ` Métodos de pago:\n`;
-    mensaje += `*Efectivo 💰, *Transferencia🏦,*Tarjetas💳\n\n`;
+    mensaje += `*Efectivo*💰, *Transferencia*🏦,*Tarjetas*💳\n\n`;
 
     if (pedido.notas) {
-        mensaje += `📝 Notas: ${pedido.notas}\n`;
+        mensaje += `📝 Notas: ${pedido.notas}\n\n`;
     }
 
     // CORRECCIÓN: Mostrar cambios solo si realmente es modificación

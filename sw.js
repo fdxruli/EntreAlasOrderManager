@@ -1,4 +1,4 @@
-const CACHE_NAME = 'entrealas-app-v3'; // Versión de la PWA
+const CACHE_NAME = 'entrealas-app-v3.1'; // Versión de la PWA
 const IMAGE_CACHE = 'entrealas-images-v3';
 const APP_PREFIX = self.location.host.includes('localhost') ? '' : '/EntreAlasOrderManager';
 const OFFLINE_FALLBACK = `${APP_PREFIX}/index.html`;
@@ -178,4 +178,5 @@ usuario github
 contraseña:
 aVKJTFGtIizzCwrg
 */
+
 

@@ -171,7 +171,7 @@ function construirMensajeWhatsApp(pedido, esModificacion) {
             mensaje += `\n`;
         } else {
             const emoji = obtenerEmojiProducto(item.nombre);
-            mensaje += `${emoji} ${item.cantidad}x ${item.nombre} - $${(item.precio * item.cantidad).toFixed(2)}\n`;
+            mensaje += `${emoji} ${item.cantidad}x ${item.nombre} - $${(item.precio * item.cantidad).toFixed(2)}\n\n`;
         }
     });
     
@@ -196,6 +196,11 @@ function construirMensajeWhatsApp(pedido, esModificacion) {
 
     mensaje += ` Métodos de pago:\n`;
     mensaje += `*Efectivo*💰, *Transferencia*🏦,*Tarjetas*💳\n\n`;
+
+    // Añadir entrega programada si existe
+    if (pedido.entregaProgramada) {
+        mensaje += `📅 Entrega Programada: ${pedido.entregaProgramada.fecha} a las ${pedido.entregaProgramada.hora}\n\n`;
+    }
 
     if (pedido.notas) {
         mensaje += `📝 Notas: ${pedido.notas}\n\n`;

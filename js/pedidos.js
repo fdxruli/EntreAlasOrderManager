@@ -64,10 +64,21 @@ function setupEditarPedido() {
 }
 
 function invalidarCachePedidos() {
+    // Limpiar caché en memoria
+    cachePedidosOrdenados = null;
+    ultimoOrden = null;
+    
+    // Limpiar cualquier caché en localStorage si existe
     localStorage.removeItem('pedidos-cache');
-    if (document.getElementById('buscar-pedido-modal').style.display === 'flex') {
+    
+    console.log('Cache de pedidos invalidado');
+    
+    // Si el modal de búsqueda está abierto, actualizar la lista
+    if (document.getElementById('buscar-pedido-modal')?.style.display === 'flex') {
         const currentOrden = document.getElementById('orden-selector')?.value || 'reciente-primero';
-        cargarPedidosRecientes(currentOrden);
+        setTimeout(() => {
+            cargarPedidosRecientes(currentOrden);
+        }, 50);
     }
 }
 
@@ -171,19 +182,22 @@ function mostrarDetallePedido(pedido) {
     const resultado = document.getElementById('resultado-busqueda');
     if (!resultado) return;
 
-    const estadoActual = pedido.estado || ESTADOS.PENDIENTE;
+    // Obtener el pedido más actualizado del storage por si ha cambiado
+    const pedidoActualizado = buscarPedidoPorCodigo(pedido.codigo) || pedido;
+    const estadoActual = pedidoActualizado.estado || ESTADOS.PENDIENTE;
     const esCancelado = estadoActual === ESTADOS.CANCELADO;
+    const esCompletado = estadoActual === ESTADOS.COMPLETADO;
 
     resultado.innerHTML = `
         <div class="pedido-encontrado">
-            <h3>Pedido #${pedido.codigo}</h3>
-            <p><strong>Fecha:</strong> ${formatearFecha(pedido.fecha)}</p>
-            <p><strong>Total:</strong> $${pedido.total.toFixed(2)}</p>
-            <p><strong>Items:</strong> ${pedido.items.length}</p>
+            <h3>Pedido #${pedidoActualizado.codigo}</h3>
+            <p><strong>Fecha:</strong> ${formatearFecha(pedidoActualizado.fecha)}</p>
+            <p><strong>Total:</strong> $${pedidoActualizado.total.toFixed(2)}</p>
+            <p><strong>Items:</strong> ${pedidoActualizado.items.length}</p>
             
             <div class="estado-section">
                 <label for="estado-pedido"><strong>Estado del pedido:</strong></label>
-                <select id="estado-pedido" class="estado-selector" ${esCancelado ? 'disabled' : ''}>
+                <select id="estado-pedido" class="estado-selector" ${esCancelado || esCompletado ? 'disabled' : ''}>
                     <option value="${ESTADOS.PENDIENTE}" ${estadoActual === ESTADOS.PENDIENTE ? 'selected' : ''}>Pendiente</option>
                     <option value="${ESTADOS.COMPLETADO}" ${estadoActual === ESTADOS.COMPLETADO ? 'selected' : ''}>Completado</option>
                     <option value="${ESTADOS.CANCELADO}" ${estadoActual === ESTADOS.CANCELADO ? 'selected' : ''}>Cancelado</option>
@@ -194,64 +208,81 @@ function mostrarDetallePedido(pedido) {
                 <button id="btn-ver-detalle" class="btn-detalle">
                     Ver Detalle Pedido
                 </button>
-                <button id="btn-editar-este-pedido" class="btn-editar" ${esCancelado ? 'disabled' : ''}>
-                    ${esCancelado ? 'No se puede editar (Cancelado)' : 'Editar contenido del pedido'}
+                <button id="btn-editar-este-pedido" class="btn-editar" ${esCancelado || esCompletado ? 'disabled' : ''}>
+                    ${esCancelado ? 'No se puede editar (Cancelado)' : esCompletado ? 'Pedido completado - No editable' : 'Editar contenido del pedido'}
                 </button>
                 <button id="btn-guardar-cambios" class="btn-guardar" ${esCancelado ? 'disabled' : ''}>
-                    ${esCancelado ? 'Pedido cancelado' : 'Guardar cambios'}
+                    ${esCancelado ? 'Pedido cancelado' : esCompletado ? 'Pedido completado' : 'Guardar cambios'}
                 </button>
             </div>
 
             <div id="cancelacion-form" class="cancelacion-form ${estadoActual === ESTADOS.CANCELADO ? '' : 'hidden'}">
                 <label for="motivo-cancelacion">Motivo de cancelación:</label>
-                <textarea id="motivo-cancelacion" placeholder="Motivo de cancelación" ${esCancelado ? 'readonly' : ''}>${pedido.motivoCancelacion || ''}</textarea>
+                <textarea id="motivo-cancelacion" placeholder="Motivo de cancelación" ${esCancelado ? 'readonly' : ''}>${pedidoActualizado.motivoCancelacion || ''}</textarea>
             </div>
 
             ${estadoActual === ESTADOS.CANCELADO ? `
                 <div class="info-cancelacion">
-                    <p><strong>Fecha de cancelación:</strong> ${formatearFecha(pedido.fechaCancelacion)}</p>
+                    <p><strong>Fecha de cancelación:</strong> ${formatearFecha(pedidoActualizado.fechaCancelacion)}</p>
                     <p class="cancelado-notice" style="color: ${COLORES_ESTADO[ESTADOS.CANCELADO]}; font-weight: bold;">⚠️ Este pedido ha sido cancelado y no puede ser editado</p>
+                </div>
+            ` : ''}
+
+            ${estadoActual === ESTADOS.COMPLETADO ? `
+                <div id="info-completado" class="info-completado">
+                    <div class="completado-notice" style="color: ${COLORES_ESTADO[ESTADOS.COMPLETADO]}; font-weight: bold; padding: 10px; background-color: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; margin-top: 10px;">
+                        ✅ Este pedido ha sido completado exitosamente
+                        <br><strong>Fecha de completado:</strong> ${formatearFecha(pedidoActualizado.fechaCompletado)}
+                    </div>
                 </div>
             ` : ''}
         </div>
     `;
 
-    // Usar setTimeout para asegurar que el DOM se haya actualizado
+    // Guardar referencia del pedido actual para uso posterior
+    window.pedidoActualEnDetalle = pedidoActualizado;
+
+    // Configurar event listeners
     setTimeout(() => {
         const btnVerDetalle = document.getElementById('btn-ver-detalle');
         if (btnVerDetalle) {
             btnVerDetalle.addEventListener('click', () => {
-                mostrarModalDetallePedido(pedido);
+                mostrarModalDetallePedido(pedidoActualizado);
+            });
+        }
+
+        const btnEditar = document.getElementById('btn-editar-este-pedido');
+        const btnGuardar = document.getElementById('btn-guardar-cambios');
+        const estadoSelector = document.getElementById('estado-pedido');
+
+        if (btnEditar && !esCompletado && !esCancelado) {
+            btnEditar.addEventListener('click', function () {
+                cargarPedidoParaEdicion(pedidoActualizado);
+                document.getElementById('buscar-pedido-modal').style.display = 'none';
+            });
+        }
+
+        if (btnGuardar && !esCancelado) {
+            btnGuardar.addEventListener('click', function () {
+                guardarCambiosEstado(pedidoActualizado);
+            });
+        }
+
+        if (estadoSelector && !esCompletado && !esCancelado) {
+            estadoSelector.addEventListener('change', function () {
+                const nuevoEstado = this.value;
+                const cancelacionForm = document.getElementById('cancelacion-form');
+
+                if (nuevoEstado === ESTADOS.CANCELADO) {
+                    cancelacionForm.classList.remove('hidden');
+                } else {
+                    cancelacionForm.classList.add('hidden');
+                }
+
+                guardarCambiosEstadoInstantaneo(pedidoActualizado, nuevoEstado);
             });
         }
     }, 0);
-
-    // Resto de tu código para otros event listeners...
-    const btnEditar = document.getElementById('btn-editar-este-pedido');
-    const btnGuardar = document.getElementById('btn-guardar-cambios');
-    const estadoSelector = document.getElementById('estado-pedido');
-
-    if (btnEditar) btnEditar.addEventListener('click', function () {
-        cargarPedidoParaEdicion(pedido);
-        document.getElementById('buscar-pedido-modal').style.display = 'none';
-    });
-
-    if (btnGuardar) btnGuardar.addEventListener('click', function () {
-        guardarCambiosEstado(pedido);
-    });
-
-    if (estadoSelector) estadoSelector.addEventListener('change', function () {
-        const nuevoEstado = this.value;
-        const cancelacionForm = document.getElementById('cancelacion-form');
-
-        if (nuevoEstado === ESTADOS.CANCELADO) {
-            cancelacionForm.classList.remove('hidden');
-        } else {
-            cancelacionForm.classList.add('hidden');
-        }
-
-        guardarCambiosEstadoInstantaneo(pedido, nuevoEstado);
-    });
 
     resultado.classList.remove('hidden');
 }
@@ -368,17 +399,31 @@ function obtenerPedidosDeStorage() {
 function actualizarPedidoEnStorage(pedido) {
     if (!esPedidoValido(pedido)) {
         console.error('Intento de guardar un pedido inválido:', pedido);
-        return;
+        return false;
     }
 
-    const pedidos = obtenerPedidosDeStorage();
-    const indicePedido = pedidos.findIndex(p => p.codigo === pedido.codigo);
+    try {
+        const pedidos = obtenerPedidosDeStorage();
+        const indicePedido = pedidos.findIndex(p => p.codigo === pedido.codigo);
 
-    if (indicePedido !== -1) {
-        pedidos[indicePedido] = pedido;
-        localStorage.setItem('pedidos', JSON.stringify(pedidos));
-        cachePedidosOrdenados = null;
-        ultimoOrden = null;
+        if (indicePedido !== -1) {
+            // Actualizar pedido existente
+            pedidos[indicePedido] = { ...pedido };
+            localStorage.setItem('pedidos', JSON.stringify(pedidos));
+            
+            // Limpiar caché
+            cachePedidosOrdenados = null;
+            ultimoOrden = null;
+            
+            console.log('Pedido actualizado correctamente en localStorage:', pedido.codigo, 'Estado:', pedido.estado);
+            return true;
+        } else {
+            console.error('No se encontró el pedido para actualizar:', pedido.codigo);
+            return false;
+        }
+    } catch (error) {
+        console.error('Error al actualizar pedido en storage:', error);
+        return false;
     }
 }
 
@@ -602,15 +647,18 @@ function mostrarModalDetallePedido(pedido) {
     crearModalDetallePedido();
     const modal = document.getElementById('detalle-pedido-modal');
 
-    // Actualizar información básica
-    document.getElementById('detalle-codigo').textContent = `#${pedido.codigo}`;
-    document.getElementById('detalle-total').textContent = pedido.total.toFixed(2);
+    // **IMPORTANTE: Obtener el pedido más actualizado del storage**
+    const pedidoActualizado = buscarPedidoPorCodigo(pedido.codigo) || pedido;
+
+    // Actualizar información básica con datos actualizados
+    document.getElementById('detalle-codigo').textContent = `#${pedidoActualizado.codigo}`;
+    document.getElementById('detalle-total').textContent = pedidoActualizado.total.toFixed(2);
 
     // Mostrar productos
     const listaProductos = document.getElementById('lista-productos-pedido');
     listaProductos.innerHTML = '';
 
-    pedido.items.forEach(item => {
+    pedidoActualizado.items.forEach(item => {
         const li = document.createElement('li');
         li.className = 'producto-item';
         li.innerHTML = `
@@ -620,25 +668,34 @@ function mostrarModalDetallePedido(pedido) {
         listaProductos.appendChild(li);
     });
 
-    // Configurar botón según estado
+    // Configurar botón según estado ACTUALIZADO
     const btnCompletar = document.getElementById('btn-completar-pedido');
-    btnCompletar.disabled = pedido.estado === ESTADOS.COMPLETADO || pedido.estado === ESTADOS.CANCELADO;
+    const estadoActual = pedidoActualizado.estado || ESTADOS.PENDIENTE;
 
-    if (pedido.estado === ESTADOS.COMPLETADO) {
+    btnCompletar.disabled = estadoActual === ESTADOS.COMPLETADO || estadoActual === ESTADOS.CANCELADO;
+
+    if (estadoActual === ESTADOS.COMPLETADO) {
         btnCompletar.innerHTML = '<i class="fas fa-check-circle"></i> Pedido Completado';
-    } else if (pedido.estado === ESTADOS.CANCELADO) {
+        btnCompletar.style.backgroundColor = '#28a745';
+        btnCompletar.style.color = 'white';
+    } else if (estadoActual === ESTADOS.CANCELADO) {
         btnCompletar.innerHTML = '<i class="fas fa-times-circle"></i> Pedido Cancelado';
+        btnCompletar.style.backgroundColor = '#dc3545';
+        btnCompletar.style.color = 'white';
     } else {
         btnCompletar.innerHTML = '<i class="fas fa-check-circle"></i> Marcar como Completado';
+        btnCompletar.style.backgroundColor = '';
+        btnCompletar.style.color = '';
     }
 
-    // Iniciar/actualizar temporizador
-    iniciarTemporizador(pedido);
+    // **CRÍTICO: Pasar el pedido ACTUALIZADO al temporizador**
+    iniciarTemporizador(pedidoActualizado);
 
     modal.style.display = 'flex';
 }
 
 function iniciarTemporizador(pedido) {
+    // Limpiar cualquier temporizador anterior
     if (window.temporizadorPedido) {
         clearInterval(window.temporizadorPedido);
         window.temporizadorPedido = null;
@@ -648,10 +705,64 @@ function iniciarTemporizador(pedido) {
     const contenedorTiempo = document.querySelector('.tiempo-transcurrido');
     const mensajeElement = document.getElementById('tiempo-mensaje');
 
-    if (!elemento || !contenedorTiempo || !mensajeElement) return;
+    if (!elemento || !contenedorTiempo || !mensajeElement) {
+        console.error('Elementos del temporizador no encontrados');
+        return;
+    }
 
     const fechaPedido = new Date(pedido.fecha);
+    const estadoActual = pedido.estado || ESTADOS.PENDIENTE;
 
+    console.log('Iniciando temporizador para pedido:', pedido.codigo, 'Estado:', estadoActual);
+
+    // **CASO 1: PEDIDO COMPLETADO**
+    if (estadoActual === ESTADOS.COMPLETADO && pedido.fechaCompletado) {
+        const fechaCompletado = new Date(pedido.fechaCompletado);
+        const tiempoFinal = fechaCompletado - fechaPedido;
+        const minutosFinal = tiempoFinal / (1000 * 60);
+        
+        elemento.textContent = formatearTiempo(tiempoFinal);
+        
+        // Configurar mensaje y color según el tiempo final
+        if (minutosFinal <= 30) {
+            contenedorTiempo.style.backgroundColor = COLORES_TIEMPO.BUEN_TIEMPO;
+            mensajeElement.textContent = `Completado en ${Math.round(minutosFinal)} min - ¡Excelente tiempo!`;
+            elemento.title = `Pedido completado en tiempo óptimo: ${Math.round(minutosFinal)} minutos`;
+        } else if (minutosFinal <= 40) {
+            contenedorTiempo.style.backgroundColor = COLORES_TIEMPO.TIEMPO_LIMITE;
+            mensajeElement.textContent = `Completado en ${Math.round(minutosFinal)} min - Buen tiempo`;
+            elemento.title = `Pedido completado en tiempo aceptable: ${Math.round(minutosFinal)} minutos`;
+        } else {
+            contenedorTiempo.style.backgroundColor = COLORES_TIEMPO.ATRASADO;
+            mensajeElement.textContent = `Completado en ${Math.round(minutosFinal)} min - Tiempo excedido`;
+            elemento.title = `Pedido completado con retraso: ${Math.round(minutosFinal)} minutos`;
+        }
+        
+        mensajeElement.style.color = '#ffffff';
+        mensajeElement.style.fontWeight = 'bold';
+        contenedorTiempo.style.animation = 'none'; // Quitar cualquier animación
+        
+        console.log('Temporizador configurado para pedido COMPLETADO:', Math.round(minutosFinal), 'minutos');
+        return; // **IMPORTANTE: No iniciar contador activo**
+    }
+
+    // **CASO 2: PEDIDO CANCELADO**
+    if (estadoActual === ESTADOS.CANCELADO) {
+        elemento.textContent = "CANCELADO";
+        contenedorTiempo.style.backgroundColor = COLORES_TIEMPO.NEUTRO;
+        mensajeElement.textContent = "Este pedido fue cancelado";
+        mensajeElement.style.color = '#ffffff';
+        mensajeElement.style.fontWeight = 'bold';
+        elemento.title = "Pedido cancelado";
+        contenedorTiempo.style.animation = 'none';
+        
+        console.log('Temporizador configurado para pedido CANCELADO');
+        return; // **IMPORTANTE: No iniciar contador activo**
+    }
+
+    // **CASO 3: PEDIDO PENDIENTE O EN PROCESO (contador activo)**
+    console.log('Iniciando contador activo para pedido pendiente/en proceso');
+    
     const actualizarTiempo = () => {
         const ahora = new Date();
         const diferencia = ahora - fechaPedido;
@@ -660,61 +771,45 @@ function iniciarTemporizador(pedido) {
         elemento.textContent = formatearTiempo(diferencia);
         actualizarMensajeTiempo(minutosTranscurridos);
 
-        // Actualizar colores y estilos según tiempo
+        // Actualizar colores y estilos según tiempo transcurrido
         if (minutosTranscurridos < 25) {
             contenedorTiempo.style.backgroundColor = COLORES_TIEMPO.BUEN_TIEMPO;
             elemento.title = "Tiempo óptimo de preparación";
+            contenedorTiempo.style.animation = 'none';
         } else if (minutosTranscurridos < 40) {
             contenedorTiempo.style.backgroundColor = COLORES_TIEMPO.TIEMPO_LIMITE;
             elemento.title = "¡Preparación en tiempo límite!";
+            contenedorTiempo.style.animation = 'none';
         } else {
             contenedorTiempo.style.backgroundColor = COLORES_TIEMPO.ATRASADO;
             elemento.title = "¡Pedido atrasado! Prioridad máxima";
             
             // Efecto visual para pedidos muy atrasados
             if (minutosTranscurridos > 45) {
-                contenedorTiempo.style.animation = "pulse 1s infinite";
+                contenedorTiempo.style.animation = "pulse 1.5s infinite";
             }
         }
     };
 
-    if (pedido.estado === ESTADOS.COMPLETADO && pedido.fechaCompletado) {
-        const tiempoFinal = new Date(pedido.fechaCompletado) - fechaPedido;
-        const minutosFinal = tiempoFinal / (1000 * 60);
-        elemento.textContent = formatearTiempo(tiempoFinal);
-
-        // Evaluación del tiempo final
-        if (minutosFinal <= 30) {
-            contenedorTiempo.style.backgroundColor = COLORES_TIEMPO.BUEN_TIEMPO;
-            mensajeElement.textContent = `Pedido completado en ${Math.round(minutosFinal)} min (Óptimo)`;
-        } else if (minutosFinal <= 40) {
-            contenedorTiempo.style.backgroundColor = COLORES_TIEMPO.TIEMPO_LIMITE;
-            mensajeElement.textContent = `Pedido completado en ${Math.round(minutosFinal)} min (Límite)`;
-        } else {
-            contenedorTiempo.style.backgroundColor = COLORES_TIEMPO.ATRASADO;
-            mensajeElement.textContent = `Pedido completado en ${Math.round(minutosFinal)} min (Atrasado)`;
-        }
-        
-        elemento.title = `Tiempo total: ${Math.round(minutosFinal)} minutos`;
-    } else if (pedido.estado === ESTADOS.CANCELADO) {
-        elemento.textContent = "Cancelado";
-        contenedorTiempo.style.backgroundColor = COLORES_TIEMPO.NEUTRO;
-        mensajeElement.textContent = "Pedido cancelado";
-        elemento.title = "Este pedido fue cancelado";
-    } else {
-        contenedorTiempo.style.backgroundColor = COLORES_TIEMPO.BUEN_TIEMPO;
-        actualizarTiempo();
-        window.temporizadorPedido = setInterval(actualizarTiempo, 1000);
-    }
+    // Actualizar inmediatamente
+    actualizarTiempo();
+    
+    // Solo iniciar el intervalo si el pedido está pendiente
+    window.temporizadorPedido = setInterval(actualizarTiempo, 1000);
+    console.log('Contador activo iniciado para pedido pendiente');
 }
 
 function cerrarModalDetalle() {
     const modal = document.getElementById('detalle-pedido-modal');
-    modal.style.display = 'none';
+    if (modal) {
+        modal.style.display = 'none';
+    }
 
+    // **IMPORTANTE: Siempre limpiar el temporizador al cerrar**
     if (window.temporizadorPedido) {
         clearInterval(window.temporizadorPedido);
         window.temporizadorPedido = null;
+        console.log('Temporizador limpiado al cerrar modal');
     }
 }
 
@@ -797,54 +892,161 @@ function actualizarMensajeTiempo(minutosTranscurridos) {
 }
 
 function completarPedidoDesdeModal() {
-    const codigo = document.getElementById('detalle-codigo').textContent.replace('#', '');
-    const pedido = buscarPedidoPorCodigo(codigo);
+    try {
+        const codigo = document.getElementById('detalle-codigo').textContent.replace('#', '');
+        const pedido = buscarPedidoPorCodigo(codigo);
 
-    if (!pedido || pedido.estado === ESTADOS.COMPLETADO || pedido.estado === ESTADOS.CANCELADO) {
-        return;
+        if (!pedido) {
+            mostrarNotificacion('Error: No se encontró el pedido', 'error', 3000);
+            return;
+        }
+
+        if (pedido.estado === ESTADOS.COMPLETADO || pedido.estado === ESTADOS.CANCELADO) {
+            mostrarNotificacion('El pedido ya está completado o cancelado', 'warning', 3000);
+            return;
+        }
+
+        if (!confirm(`¿Marcar el pedido #${codigo} como completado?`)) {
+            return;
+        }
+
+        // Actualizar estado del pedido
+        pedido.estado = ESTADOS.COMPLETADO;
+        pedido.fechaCompletado = new Date().toISOString();
+        pedido.fechaUltimaModificacion = new Date().toISOString();
+        
+        delete pedido.motivoCancelacion;
+        delete pedido.fechaCancelacion;
+
+        // Guardar cambios en localStorage
+        actualizarPedidoEnStorage(pedido);
+        console.log('Pedido completado y guardado:', pedido);
+
+        // **IMPORTANTE: Detener el temporizador INMEDIATAMENTE**
+        if (window.temporizadorPedido) {
+            clearInterval(window.temporizadorPedido);
+            window.temporizadorPedido = null;
+            console.log('Temporizador detenido al completar pedido');
+        }
+
+        // Actualizar UI del modal
+        const btnCompletar = document.getElementById('btn-completar-pedido');
+        if (btnCompletar) {
+            btnCompletar.disabled = true;
+            btnCompletar.innerHTML = '<i class="fas fa-check-circle"></i> Pedido Completado';
+            btnCompletar.style.backgroundColor = '#28a745';
+            btnCompletar.style.color = 'white';
+        }
+
+        // **REINICIAR el temporizador con el nuevo estado COMPLETADO**
+        setTimeout(() => {
+            iniciarTemporizador(pedido);
+        }, 100);
+
+        // Actualizar vista de detalle del pedido
+        actualizarVistaDetallePedido(pedido);
+
+        // Limpiar caché y actualizar otras vistas
+        cachePedidosOrdenados = null;
+        ultimoOrden = null;
+        invalidarCachePedidos();
+
+        setTimeout(() => {
+            if (document.getElementById('buscar-pedido-modal').style.display === 'flex') {
+                const ordenActual = document.getElementById('orden-selector')?.value || 'reciente-primero';
+                cargarPedidosRecientes(ordenActual);
+            }
+            
+            if (typeof actualizarListaPedidos === 'function') {
+                actualizarListaPedidos();
+            }
+            
+            if (typeof actualizarDashboard === 'function') {
+                actualizarDashboard();
+            }
+            
+            if (window.dashboardFunctions && window.dashboardFunctions.agregarNuevoPedido) {
+                console.log('Enviando pedido completado al dashboard:', pedido);
+                window.dashboardFunctions.agregarNuevoPedido(pedido);
+            }
+        }, 200);
+
+        mostrarNotificacion(`¡Pedido #${codigo} completado exitosamente!`, 'success', 4000);
+
+        setTimeout(() => {
+            if (confirm('¿Deseas cerrar el detalle del pedido?')) {
+                cerrarModalDetalle();
+            }
+        }, 2000);
+
+    } catch (error) {
+        console.error('Error al completar pedido desde modal:', error);
+        mostrarNotificacion('Error al completar el pedido. Intenta nuevamente.', 'error', 4000);
     }
+}
 
-    // Confirmar antes de completar
-    if (!confirm(`¿Marcar el pedido #${codigo} como completado?`)) {
-        return;
-    }
+// Nueva función para actualizar la vista de detalle del pedido
+function actualizarVistaDetallePedido(pedido) {
+    try {
+        // Actualizar el selector de estado si existe
+        const estadoSelector = document.getElementById('estado-pedido');
+        if (estadoSelector) {
+            estadoSelector.value = pedido.estado;
+            
+            // Si está completado, deshabilitarlo
+            if (pedido.estado === ESTADOS.COMPLETADO || pedido.estado === ESTADOS.CANCELADO) {
+                estadoSelector.disabled = true;
+            }
+        }
 
-    // Actualizar estado
-    pedido.estado = ESTADOS.COMPLETADO;
-    pedido.fechaCompletado = new Date().toISOString();
-    pedido.fechaUltimaModificacion = new Date().toISOString();
+        // Actualizar botones de acción
+        const btnEditar = document.getElementById('btn-editar-este-pedido');
+        const btnGuardar = document.getElementById('btn-guardar-cambios');
 
-    // Guardar cambios en localStorage
-    actualizarPedidoEnStorage(pedido);
+        if (pedido.estado === ESTADOS.COMPLETADO) {
+            if (btnEditar) {
+                btnEditar.disabled = true;
+                btnEditar.textContent = 'Pedido completado - No editable';
+                btnEditar.style.backgroundColor = '#6c757d';
+                btnEditar.style.color = 'white';
+            }
+            
+            if (btnGuardar) {
+                btnGuardar.disabled = true;
+                btnGuardar.textContent = 'Pedido completado';
+                btnGuardar.style.backgroundColor = '#28a745';
+                btnGuardar.style.color = 'white';
+            }
+        }
 
-    // Actualizar UI
-    const btnCompletar = document.getElementById('btn-completar-pedido');
-    btnCompletar.disabled = true;
-    btnCompletar.innerHTML = '<i class="fas fa-check-circle"></i> Pedido Completado';
+        // Ocultar formulario de cancelación si estaba visible
+        const cancelacionForm = document.getElementById('cancelacion-form');
+        if (cancelacionForm) {
+            cancelacionForm.classList.add('hidden');
+        }
 
-    // Detener temporizador y mostrar tiempo final
-    if (window.temporizadorPedido) {
-        clearInterval(window.temporizadorPedido);
-        const fechaPedido = new Date(pedido.fecha);
-        const fechaCompletado = new Date(pedido.fechaCompletado);
-        const tiempoFinal = fechaCompletado - fechaPedido;
-        document.getElementById('tiempo-pedido').textContent = formatearTiempo(tiempoFinal);
-    }
+        // Agregar información de completado si no existe
+        const infoCompletado = document.getElementById('info-completado');
+        if (!infoCompletado && pedido.estado === ESTADOS.COMPLETADO) {
+            const pedidoEncontrado = document.querySelector('.pedido-encontrado');
+            if (pedidoEncontrado) {
+                const infoDiv = document.createElement('div');
+                infoDiv.id = 'info-completado';
+                infoDiv.className = 'info-completado';
+                infoDiv.innerHTML = `
+                    <div class="completado-notice" style="color: ${COLORES_ESTADO[ESTADOS.COMPLETADO]}; font-weight: bold; padding: 10px; background-color: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; margin-top: 10px;">
+                        ✅ Este pedido ha sido completado exitosamente
+                        <br><strong>Fecha de completado:</strong> ${formatearFecha(pedido.fechaCompletado)}
+                    </div>
+                `;
+                pedidoEncontrado.appendChild(infoDiv);
+            }
+        }
 
-    // Notificar al dashboard para actualizar métricas
-    if (window.dashboardFunctions && window.dashboardFunctions.agregarNuevoPedido) {
-        console.log('Enviando pedido al dashboard:', pedido);
-        window.dashboardFunctions.agregarNuevoPedido(pedido);
-    } else {
-        console.warn('Dashboard functions no disponibles. El dashboard no se actualizará dinámicamente.');
-        mostrarNotificacion('Pedido completado, pero el dashboard no se actualizó. Recarga la página.', 'warning');
-    }
-
-    mostrarNotificacion(`Pedido #${codigo} marcado como completado`, 'success', 3000);
-
-    // Actualizar otras vistas
-    if (typeof actualizarListaPedidos === 'function') {
-        actualizarListaPedidos();
+        console.log('Vista de detalle del pedido actualizada correctamente');
+        
+    } catch (error) {
+        console.error('Error al actualizar vista de detalle del pedido:', error);
     }
 }
 

@@ -65,6 +65,19 @@
                 <div class="pedido-notas">
                     <label for="pedido-notas-input">Notas del pedido:</label>
                     <textarea id="pedido-notas-input" placeholder="Ej: Sin picante, para llevar, etc."></textarea>
+
+                    <!-- Nueva sección para fecha y hora de entrega -->
+                    <div class="entrega-programada">
+                        <label>
+                            <input type="checkbox" id="entrega-programada-checkbox"> Programar entrega
+                        </label>
+                        <div id="entrega-programada-campos" style="display: none;">
+                            <label for="fecha-entrega">Fecha de entrega:</label>
+                            <input type="date" id="fecha-entrega" class="form-control">
+                            <label for="hora-entrega">Hora de entrega:</label>
+                            <input type="time" id="hora-entrega" class="form-control">
+                        </div>
+                    </div>
                 </div>
 
                 <div class="pedido-totales">
@@ -73,9 +86,12 @@
                         <span id="subtotal">$0.00</span>
                     </div>
                     <div class="descuento">
-                        <input type="text" id="codigo-descuento" placeholder="Código descuento">
-                        <button id="aplicar-descuento">Aplicar</button>
-                        <span id="descuento-aplicado"></span>
+                        <div class="descuento-container">
+                            <input type="text" id="codigo-descuento" placeholder="Código descuento">
+                            <button id="aplicar-descuento">Aplicar</button>
+                            <span id="descuento-aplicado"></span>
+                            <div id="codigos-disponibles" class="codigos-disponibles"></div>
+                        </div>
                     </div>
 
                     <!-- Botones de costo de envío -->
@@ -632,7 +648,6 @@
                 </div>
             </div>
         </div>
-        <div id="notificaciones"></div>
     </div>
     </div>
     <!-- Scripts -->

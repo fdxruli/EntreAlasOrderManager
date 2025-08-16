@@ -1,4 +1,4 @@
-const CACHE_NAME = 'entrealas-app-v3.1'; // Versión de la PWA
+const CACHE_NAME = 'entrealas-app-v3.3'; // Versión de la PWA
 const IMAGE_CACHE = 'entrealas-images-v3';
 const APP_PREFIX = self.location.host.includes('localhost') ? '' : '/EntreAlasOrderManager';
 const OFFLINE_FALLBACK = `${APP_PREFIX}/index.html`;
@@ -10,7 +10,7 @@ const urlsToCache = [
   `${APP_PREFIX}/manifest.json`,
   `${APP_PREFIX}/css/styles.css`,
   `${APP_PREFIX}/libs/chart.js`,
-  `${APP_PREFIX}/libs/date-fns.js`,
+  `${APP_PREFIX}/libs/date-fns.js`
   `${APP_PREFIX}/js/app.js`,
   `${APP_PREFIX}/js/pedidos.js`,
   `${APP_PREFIX}/js/combo.js`,
@@ -178,5 +178,3 @@ usuario github
 contraseña:
 aVKJTFGtIizzCwrg
 */
-
-

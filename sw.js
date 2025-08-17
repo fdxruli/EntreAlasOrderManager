@@ -18,9 +18,9 @@ const urlsToCache = [
   `${APP_PREFIX}/js/dashboard.js`,
   `${APP_PREFIX}/js/storage.js`,
   `${APP_PREFIX}/js/whatsapp.js`,
-  `${APP_PREFIX}/imagen-icono/logo-entrealas-192x192.svg`,
-  `${APP_PREFIX}/imagen-icono/logo-entrealas-512x512.svg`,
-  `${APP_PREFIX}/imagen-icono/logo-entrealas-96x96.svg`,
+  `${APP_PREFIX}/imagen-icono/logo-entrealas-192x192.png`,
+  `${APP_PREFIX}/imagen-icono/logo-entrealas-512x512.png`,
+  `${APP_PREFIX}/imagen-icono/logo-entrealas-96x96.png`,
   `${APP_PREFIX}/screenshots/screen1.webp`
 ];
 
@@ -178,3 +178,4 @@ usuario github
 contraseña:
 aVKJTFGtIizzCwrg
 */
+

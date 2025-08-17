@@ -10,7 +10,7 @@ const urlsToCache = [
   `${APP_PREFIX}/manifest.json`,
   `${APP_PREFIX}/css/styles.css`,
   `${APP_PREFIX}/libs/chart.js`,
-  `${APP_PREFIX}/libs/date-fns.js`
+  `${APP_PREFIX}/libs/date-fns.js`,
   `${APP_PREFIX}/js/app.js`,
   `${APP_PREFIX}/js/pedidos.js`,
   `${APP_PREFIX}/js/combo.js`,
@@ -178,6 +178,7 @@ usuario github
 contraseña:
 aVKJTFGtIizzCwrg
 */
+
 
 
 

@@ -34,7 +34,6 @@ function obtenerDescuentos() {
       descuentosCache = JSON.parse(localStorage.getItem('descuentos')) || {};
     } catch (error) {
       console.error('Error al parsear descuentos:', error);
-      mostrarNotificacion('Error al cargar descuentos', 'error');
       descuentosCache = {};
     }
   }
@@ -62,7 +61,7 @@ function inicializarDescuentos() {
   if (!localStorage.getItem('descuentos')) {
     const fechaFutura = new Date();
     fechaFutura.setFullYear(fechaFutura.getFullYear() + 1);
-    const fechaFormatoISO = fechaFutura.toISOString();
+    const fechaFormatoISO = fechaFutura.toISOString().split('T')[0];
     const fechaCreacion = new Date().toISOString();
 
     const descuentosIniciales = {
@@ -75,9 +74,8 @@ function inicializarDescuentos() {
         limiteUsos: 100,
         categorias: ["alitas"],
         fechaCreacion: fechaCreacion,
-        fechaActualizacion: fechaCreacion,
         activo: true,
-        pedidos: []
+        pedidos:[]
       },
       "FIESTA50": {
         codigo: "FIESTA50",
@@ -88,9 +86,8 @@ function inicializarDescuentos() {
         limiteUsos: null,
         categorias: null,
         fechaCreacion: fechaCreacion,
-        fechaActualizacion: fechaCreacion,
         activo: true,
-        pedidos: []
+        pedidos:[]
       }
     };
     guardarDescuentos(descuentosIniciales);
@@ -103,12 +100,17 @@ function migrarDescuentos() {
     if (!descuento.pedidos) {
       descuento.pedidos = [];
     }
-    if (!descuento.fechaActualizacion) {
-      descuento.fechaActualizacion = descuento.fechaCreacion || new Date().toISOString();
-    }
   });
   guardarDescuentos(descuentos);
 }
+
+// Ejecutar migración al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+  migrarDescuentos();
+  inicializarDescuentos();
+  document.getElementById('filtro-orden')?.addEventListener('change', cargarListaDescuentos);
+  document.getElementById('btn-aplicar-descuento')?.addEventListener('click', aplicarDescuento);
+});
 
 // Función para validar un descuento completo
 function validarDescuentoCompleto(descuento) {
@@ -124,10 +126,6 @@ function validarDescuentoCompleto(descuento) {
   
   if (descuento.valor <= 0) {
     errores.push('El valor debe ser mayor a 0');
-  }
-  
-  if (descuento.validoHasta && isNaN(new Date(descuento.validoHasta).getTime())) {
-    errores.push('La fecha de vencimiento es inválida');
   }
   
   if (descuento.validoHasta && new Date(descuento.validoHasta) <= new Date()) {
@@ -153,12 +151,6 @@ function guardarNuevoDescuento(esEdicion = false, codigoOriginal = null) {
   const limiteUsos = document.getElementById('limite-usos').value || null;
   const categoriasSelect = document.getElementById('categorias-descuento');
 
-  // Validar fecha
-  if (validoHasta && isNaN(new Date(validoHasta).getTime())) {
-    mostrarNotificacion('Fecha de vencimiento inválida', 'error');
-    return false;
-  }
-
   // Obtener categorías seleccionadas
   let categorias = null;
   if (categoriasSelect) {
@@ -168,21 +160,21 @@ function guardarNuevoDescuento(esEdicion = false, codigoOriginal = null) {
 
   // Crear objeto descuento
   const nuevoDescuento = {
-    codigo,
-    tipo,
-    valor,
-    validoHasta: validoHasta ? new Date(validoHasta).toISOString() : null,
-    usos: esEdicion ? obtenerDescuentos()[codigoOriginal]?.usos || 0 : 0,
-    limiteUsos: limiteUsos ? parseInt(limiteUsos) : null,
-    categorias,
-    fechaCreacion: esEdicion 
-      ? obtenerDescuentos()[codigoOriginal]?.fechaCreacion || new Date().toISOString()
-      : new Date().toISOString(),
-    fechaActualizacion: new Date().toISOString(),
-    pedidos: esEdicion 
-      ? obtenerDescuentos()[codigoOriginal]?.pedidos || []
-      : []
-  };
+      codigo,
+      tipo,
+      valor,
+      validoHasta,
+      usos: esEdicion ? obtenerDescuentos()[codigoOriginal]?.usos || 0 : 0,
+      limiteUsos: limiteUsos ? parseInt(limiteUsos) : null,
+      categorias,
+      fechaCreacion: esEdicion 
+        ? obtenerDescuentos()[codigoOriginal]?.fechaCreacion 
+        : new Date().toISOString(),
+      fechaActualizacion: new Date().toISOString(),
+      pedidos: esEdicion 
+        ? obtenerDescuentos()[codigoOriginal]?.pedidos || []
+        : []
+    };
 
   // Validar
   const validacion = validarDescuentoCompleto(nuevoDescuento);
@@ -194,7 +186,7 @@ function guardarNuevoDescuento(esEdicion = false, codigoOriginal = null) {
   // Obtener descuentos existentes
   const descuentos = obtenerDescuentos();
 
-  // Verificar si el código ya existe (solo para nuevos)
+  // Verificar if el código ya existe (solo para nuevos)
   if (!esEdicion && descuentos[codigo]) {
     mostrarNotificacion('Este código ya existe', 'warning');
     return false;
@@ -235,7 +227,7 @@ function editarDescuento(codigo) {
   document.getElementById('nuevo-codigo').value = descuento.codigo;
   document.getElementById('tipo-descuento').value = descuento.tipo;
   document.getElementById('valor-descuento').value = descuento.valor;
-  document.getElementById('valido-hasta').value = descuento.validoHasta ? new Date(descuento.validoHasta).toISOString().split('T')[0] : '';
+  document.getElementById('valido-hasta').value = descuento.validoHasta || '';
   document.getElementById('limite-usos').value = descuento.limiteUsos || '';
 
   // Seleccionar categorías
@@ -288,13 +280,8 @@ function manejarFormularioDescuento() {
 }
 
 // Función para calcular total con descuento
-function calcularTotalConDescuento(pedido = window.pedidoActual) {
-  // Validar que el pedido sea válido
-  if (!pedido || typeof pedido !== 'object' || !pedido.items || !Array.isArray(pedido.items)) {
-    console.warn('Pedido inválido en calcularTotalConDescuento:', pedido);
-    return { total: 0, descuento: 0, subtotal: 0, mensaje: 'Pedido inválido o sin ítems' };
-  }
-
+function calcularTotalConDescuento() {
+  const pedido = window.pedidoActual;
   let total = 0;
   let totalDescuento = 0;
   let descuentoInfo = '';
@@ -327,7 +314,7 @@ function calcularTotalConDescuento(pedido = window.pedidoActual) {
 
     // Identificar productos aplicables (excluyendo combos)
     pedido.items.forEach(item => {
-      if (item.esCombo !== true) {
+      if (item.esCombo !== true) { // Asegurarse de que esCombo sea explícitamente false o undefined
         const categoria = encontrarCategoriaProducto(item.id);
         if (!descuento.categorias || (categoria && descuento.categorias.includes(categoria))) {
           subtotalAplicable += item.precio * item.cantidad;
@@ -351,7 +338,7 @@ function calcularTotalConDescuento(pedido = window.pedidoActual) {
       const categoriasAplicadas = descuento.categorias ?
         descuento.categorias.join(', ') : 'todos los productos (excepto combos)';
 
-      descuentoInfo = `Descuento aplicado (${descuento.codigo}): -${formatearMoneda(totalDescuento)} (${descuento.tipo === 'porcentaje' ? descuento.valor + '%' : 'fijo'} en ${categoriasAplicadas})`;
+      descuentoInfo = `Descuento aplicado (${descuento.codigo}): -$${totalDescuento.toFixed(2)} (${descuento.tipo === 'porcentaje' ? descuento.valor + '%' : 'fijo'} en ${categoriasAplicadas})`;
       if (contieneCombos) {
         descuentoInfo += ' (no aplicado a combos)';
       }
@@ -369,17 +356,15 @@ function calcularTotalConDescuento(pedido = window.pedidoActual) {
   // Calcular el total final restando el descuento del total original
   const totalFinal = total - totalDescuento;
 
-  // Actualizar UI solo si estamos trabajando con el pedido actual
-  if (pedido === window.pedidoActual) {
-    const descuentoAplicadoElement = document.getElementById('descuento-aplicado');
-    if (descuentoAplicadoElement) {
-      if (descuentoInfo) {
-        descuentoAplicadoElement.innerHTML = descuentoInfo;
-        descuentoAplicadoElement.className = 'descuento-exitoso';
-      } else {
-        descuentoAplicadoElement.textContent = '';
-        descuentoAplicadoElement.className = '';
-      }
+  // Actualizar UI
+  const descuentoAplicadoElement = document.getElementById('descuento-aplicado');
+  if (descuentoAplicadoElement) {
+    if (descuentoInfo) {
+      descuentoAplicadoElement.innerHTML = descuentoInfo;
+      descuentoAplicadoElement.className = 'descuento-exitoso';
+    } else {
+      descuentoAplicadoElement.textContent = '';
+      descuentoAplicadoElement.className = '';
     }
   }
 
@@ -403,30 +388,21 @@ function encontrarCategoriaProducto(productoId) {
 
 // Función para mostrar el administrador de descuentos
 function mostrarAdminDescuentos() {
-  try {
-    const modal = document.getElementById('admin-descuentos-modal');
-    if (!modal) {
-      mostrarNotificacion('No se encontró el modal de administración de descuentos', 'error');
-      return;
-    }
-    
-    // Configurar eventos
-    document.getElementById('btn-crear-descuento')?.addEventListener('click', manejarFormularioDescuento);
-    document.getElementById('btn-cancelar-edicion')?.addEventListener('click', cancelarEdicion);
-    document.getElementById('filtro-orden')?.addEventListener('change', cargarListaDescuentos);
-    
-    // Cargar datos
-    cargarListaDescuentos();
-    modal.style.display = 'flex';
-  } catch (error) {
-    console.error('Error en mostrarAdminDescuentos:', error);
-    mostrarNotificacion('Error al mostrar la administración de descuentos', 'error');
-  }
+  const modal = document.getElementById('admin-descuentos-modal');
+  
+  // Configurar eventos
+  document.getElementById('btn-crear-descuento').addEventListener('click', manejarFormularioDescuento);
+  document.getElementById('btn-cancelar-edicion').addEventListener('click', cancelarEdicion);
+  document.getElementById('filtro-orden').addEventListener('change', cargarListaDescuentos);
+  
+  // Cargar datos
+  cargarListaDescuentos();
+  modal.style.display = 'flex';
 }
 
 // Función para ordenar descuentos
 function ordenarDescuentos(descuentos, criterio) {
-  const descuentosArray = Array.isArray(descuentos) ? descuentos : Object.values(descuentos);
+  const descuentosArray = Object.values(descuentos);
 
   switch (criterio) {
     case CONFIG_DESCUENTOS.ORDENAMIENTO.RECIENTES:
@@ -451,7 +427,7 @@ function ordenarDescuentos(descuentos, criterio) {
       });
 
     case CONFIG_DESCUENTOS.ORDENAMIENTO.USOS:
-      return descuentosArray.sort((a, b) => (b.usos || 0) - (a.usos || 0));
+      return descuentosArray.sort((a, b) => b.usos - a.usos);
 
     default:
       return descuentosArray;
@@ -464,25 +440,11 @@ function cargarListaDescuentos() {
   const descuentos = obtenerDescuentos();
   const ordenSeleccionado = document.getElementById('filtro-orden').value;
 
-  // Filtrar descuentos con fechas válidas
-  const descuentosValidos = Object.values(descuentos).filter(descuento => {
-    const hasValidDates =
-      (!descuento.fechaCreacion || !isNaN(new Date(descuento.fechaCreacion).getTime())) &&
-      (!descuento.fechaActualizacion || !isNaN(new Date(descuento.fechaActualizacion).getTime())) &&
-      (!descuento.validoHasta || !isNaN(new Date(descuento.validoHasta).getTime()));
-    if (!hasValidDates) {
-      console.warn(`Descuento inválido encontrado: ${descuento.codigo}`, descuento);
-    }
-    return hasValidDates;
-  });
-
   // Ordenar descuentos
-  const descuentosOrdenados = ordenarDescuentos(descuentosValidos, ordenSeleccionado);
+  const descuentosOrdenados = ordenarDescuentos(descuentos, ordenSeleccionado);
 
   // Limpiar tabla
-  tabla.innerHTML = descuentosOrdenados.length === 0
-    ? '<tr><td colspan="7">No hay descuentos registrados</td></tr>'
-    : '';
+  tabla.innerHTML = '';
 
   // Actualizar contador
   document.getElementById('contador-descuentos').textContent = 
@@ -492,19 +454,20 @@ function cargarListaDescuentos() {
   descuentosOrdenados.forEach(descuento => {
     const estado = obtenerEstadoDescuento(descuento);
     const tr = document.createElement('tr');
+    
     tr.classList.add(`descuento-${estado}`);
     
-    const tooltip = `Creado: ${formatearFecha(descuento.fechaCreacion || new Date())}
-Última actualización: ${formatearFecha(descuento.fechaActualizacion || new Date())}
+    const tooltip = `Creado: ${formatearFecha(descuento.fechaCreacion)}
+Última actualización: ${formatearFecha(descuento.fechaActualizacion)}
 Usos: ${descuento.usos}${descuento.limiteUsos ? ` de ${descuento.limiteUsos}` : ''}
 Pedidos: ${descuento.pedidos ? descuento.pedidos.length : 0}`;
 
     tr.innerHTML = `
-      <td>${sanitizarHTML(descuento.codigo)}</td>
+      <td>${descuento.codigo}</td>
       <td>${descuento.tipo === 'porcentaje' ? '%' : '$'}</td>
       <td>${descuento.valor}${descuento.tipo === 'porcentaje' ? '%' : ''}</td>
       <td>${formatearFecha(descuento.validoHasta)}</td>
-      <td>${descuento.categorias ? sanitizarHTML(descuento.categorias.join(', ')) : 'Todos'}</td>
+      <td>${descuento.categorias ? descuento.categorias.join(', ') : 'Todos'}</td>
       <td>${descuento.usos}${descuento.limiteUsos ? `/${descuento.limiteUsos}` : ''}</td>
       <td>
         <div class="botones-accion" data-tooltip="${tooltip}">
@@ -527,14 +490,6 @@ Pedidos: ${descuento.pedidos ? descuento.pedidos.length : 0}`;
     tabla.appendChild(tr);
   });
 
-  // Mostrar advertencia si se filtraron descuentos
-  if (Object.keys(descuentos).length !== descuentosValidos.length) {
-    mostrarNotificacion(
-      `${Object.keys(descuentos).length - descuentosValidos.length} descuento(s) no se mostraron debido a fechas inválidas`,
-      'warning'
-    );
-  }
-
   // Configurar eventos
   tabla.addEventListener('click', manejarClicksTabla);
 }
@@ -554,22 +509,7 @@ function mostrarHistorialPedidos(codigo) {
     return;
   }
 
-  // Filtrar pedidos con fechas válidas
-  const pedidosValidos = descuento.pedidos.filter(pedido => {
-    const isValid = pedido.fecha && !isNaN(new Date(pedido.fecha).getTime());
-    if (!isValid) {
-      console.warn(`Pedido inválido en descuento ${codigo}:`, pedido);
-    }
-    return isValid;
-  });
-
-  // Si no hay pedidos válidos
-  if (pedidosValidos.length === 0) {
-    mostrarNotificacion(`No hay pedidos válidos registrados para el código ${codigo}`, 'warning');
-    return;
-  }
-
-  // Mostrar modal con historial
+  // Si hay pedidos, mostrar el modal con el historial completo
   const modal = document.createElement('div');
   modal.className = 'modal-historial-pedidos';
   modal.style.cssText = `
@@ -597,22 +537,22 @@ function mostrarHistorialPedidos(codigo) {
   `;
 
   contenido.innerHTML = `
-    <h2>Historial de Pedidos - ${sanitizarHTML(codigo)}</h2>
-    <p>Total usos: ${descuento.usos} | Pedidos registrados: ${pedidosValidos.length}</p>
+    <h2>Historial de Pedidos - ${codigo}</h2>
+    <p>Total usos: ${descuento.usos} | Pedidos registrados: ${descuento.pedidos.length}</p>
     <div class="lista-pedidos">
-      ${pedidosValidos.map(pedido => `
+      ${descuento.pedidos.map(pedido => `
         <div class="pedido-item" style="margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
-          <h3 style="margin: 0 0 5px 0;">Pedido: ${sanitizarHTML(pedido.pedidoId)}</h3>
+          <h3 style="margin: 0 0 5px 0;">Pedido: ${pedido.pedidoId}</h3>
           <p style="margin: 0 0 5px 0;">Fecha: ${formatearFecha(pedido.fecha)}</p>
-          <p style="margin: 0 0 5px 0;">Total: ${formatearMoneda(pedido.montoTotal)} (Descuento: ${formatearMoneda(pedido.montoDescuento)})</p>
+          <p style="margin: 0 0 5px 0;">Total: $${pedido.montoTotal.toFixed(2)} (Descuento: $${pedido.montoDescuento.toFixed(2)})</p>
           <details style="margin-top: 10px;">
             <summary>Ver detalles</summary>
             <ul style="margin: 5px 0 0 20px; padding: 0;">
               ${pedido.detallesPedido?.items?.map(item => `
-                <li>${item.cantidad}x ${sanitizarHTML(item.nombre)} - ${formatearMoneda(item.precio)} c/u</li>
+                <li>${item.cantidad}x ${item.nombre} - $${item.precio.toFixed(2)} c/u</li>
               `).join('') || '<li>No hay detalles disponibles</li>'}
             </ul>
-            <p>Estado: ${sanitizarHTML(pedido.detallesPedido?.estado || 'desconocido')}</p>
+            <p>Estado: ${pedido.detallesPedido?.estado || 'desconocido'}</p>
           </details>
         </div>
       `).join('')}
@@ -640,7 +580,7 @@ function sincronizarPedidosConDescuentos() {
 
   // Reconstruir desde los pedidos guardados
   pedidos.forEach(pedido => {
-    if (pedido.descuento?.codigo && pedido.fecha && !isNaN(new Date(pedido.fecha).getTime())) {
+    if (pedido.descuento?.codigo) {
       const descuento = descuentos[pedido.descuento.codigo];
       if (descuento) {
         if (!Array.isArray(descuento.pedidos)) {
@@ -648,8 +588,8 @@ function sincronizarPedidosConDescuentos() {
         }
         
         descuento.pedidos.push({
-          pedidoId: pedido.codigo || `PED${Date.now()}`,
-          fecha: new Date(pedido.fecha).toISOString(),
+          pedidoId: pedido.codigo,
+          fecha: pedido.fecha,
           montoTotal: pedido.total,
           montoDescuento: pedido.subtotal - pedido.total,
           detallesPedido: {
@@ -660,8 +600,6 @@ function sincronizarPedidosConDescuentos() {
         
         descuento.usos = (descuento.usos || 0) + 1;
       }
-    } else if (pedido.descuento?.codigo) {
-      console.warn(`Pedido con fecha inválida para descuento ${pedido.descuento.codigo}:`, pedido);
     }
   });
 
@@ -674,6 +612,7 @@ function manejarClicksTabla(e) {
   if (!target) return;
 
   const codigo = target.dataset.codigo;
+  console.log('Botón clicado:', target.className, 'Código:', codigo); // Depuración
 
   if (target.classList.contains('btn-eliminar-descuento')) {
     eliminarDescuento(codigo);
@@ -695,6 +634,22 @@ function obtenerEstadoDescuento(descuento) {
     return CONFIG_DESCUENTOS.ESTADOS.LIMITE_ALCANZADO;
   }
   return CONFIG_DESCUENTOS.ESTADOS.ACTIVO;
+}
+
+// Función para formatear fechas
+function formatearFecha(fecha) {
+  if (!fecha) return 'Indefinido';
+  
+  try {
+    return new Date(fecha).toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  } catch (e) {
+    console.error('Error formateando fecha:', fecha, e);
+    return 'Fecha inválida';
+  }
 }
 
 // Función para compartir por WhatsApp
@@ -728,7 +683,7 @@ function compartirPorWhatsApp(codigoDescuento) {
 function generarMensajeWhatsApp(descuento) {
   const tipo = descuento.tipo === 'porcentaje' 
     ? `${descuento.valor}% de descuento` 
-    : `${formatearMoneda(descuento.valor)} de descuento`;
+    : `$${descuento.valor} de descuento`;
   
   const vencimiento = descuento.validoHasta 
     ? `\n📅 Válido hasta: ${formatearFecha(descuento.validoHasta)}` 
@@ -846,7 +801,7 @@ function aplicarDescuento() {
     montoDescuento: montoDescuento,
     detallesPedido: {
       items: pedidoActual.items
-        .filter(item => !item.esCombo)
+        .filter(item => !item.esCombo) // Excluir combos de los detalles
         .map(item => ({
           id: item.id,
           nombre: item.nombre,
@@ -877,7 +832,7 @@ function aplicarDescuento() {
   // Actualizar UI
   elementoMensaje.innerHTML = `
     <span class="descuento-exitoso">
-      ✔️ Descuento aplicado: ${sanitizarHTML(codigo)}
+      ✔️ Descuento aplicado: ${codigo}
       <button class="btn-remover-descuento">✖</button>
     </span>
   `;
@@ -897,7 +852,7 @@ function limpiarDescuentoAplicado() {
 // Función para mostrar error de descuento
 function mostrarErrorDescuento(mensaje, elemento) {
   window.pedidoActual.descuento = null;
-  elemento.innerHTML = `<span class="descuento-error">❌ ${sanitizarHTML(mensaje)}</span>`;
+  elemento.innerHTML = `<span class="descuento-error">❌ ${mensaje}</span>`;
   actualizarPedidoUI();
 }
 

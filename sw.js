@@ -1,5 +1,5 @@
-const CACHE_NAME = 'entrealas-app-v3.3'; // Versión de la PWA
-const IMAGE_CACHE = 'entrealas-images-v3';
+const CACHE_NAME = 'entrealas-app-v3.4'; // Versión de la PWA
+const IMAGE_CACHE = 'entrealas-images-v3.2';
 const APP_PREFIX = self.location.host.includes('localhost') ? '' : '/EntreAlasOrderManager';
 const OFFLINE_FALLBACK = `${APP_PREFIX}/index.html`;
 const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB
@@ -178,4 +178,5 @@ usuario github
 contraseña:
 aVKJTFGtIizzCwrg
 */
+
 

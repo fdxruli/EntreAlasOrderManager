@@ -10,13 +10,13 @@
   "categories": ["food", "business"],
   "icons": [
     {
-      "src": "/EntreAlasOrderManager/imagen-icono/logo-entrealas-192x192.svg",
+      "src": "/EntreAlasOrderManager/imagen-icono/logo-entrealas-192x192.png",
       "sizes": "192x192",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "/EntreAlasOrderManager/imagen-icono/logo-entrealas-512x512.svg",
+      "src": "/EntreAlasOrderManager/imagen-icono/logo-entrealas-512x512.png",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
@@ -36,10 +36,11 @@
       "url": "/EntreAlasOrderManager/index.html?new-order",
       "icons": [
         {
-          "src": "/EntreAlasOrderManager/imagenicono/logo-entrealas-96x96.svg",
+          "src": "/EntreAlasOrderManager/imagenicono/logo-entrealas-96x96.png",
           "sizes": "96x96"
         }
       ]
     }
   ]
 }
+

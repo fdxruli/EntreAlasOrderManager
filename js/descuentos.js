@@ -45,6 +45,8 @@ function guardarDescuentos(descuentos) {
   try {
     descuentosCache = descuentos;
     localStorage.setItem('descuentos', JSON.stringify(descuentos));
+    // Actualizar el datalist después de guardar cambios
+    llenarDatalistCodigos();
   } catch (error) {
     console.error('Error al guardar descuentos:', error);
     mostrarNotificacion('Error al guardar descuentos', 'error');
@@ -104,10 +106,28 @@ function migrarDescuentos() {
   guardarDescuentos(descuentos);
 }
 
+// Nueva función para llenar el datalist con códigos vigentes
+function llenarDatalistCodigos() {
+  const datalist = document.getElementById('codigos-vigentes');
+  if (!datalist) return; // Si no existe el datalist, salir
+
+  datalist.innerHTML = ''; // Limpiar opciones existentes
+
+  const descuentos = obtenerDescuentos();
+  Object.values(descuentos).forEach(descuento => {
+    if (obtenerEstadoDescuento(descuento) === CONFIG_DESCUENTOS.ESTADOS.ACTIVO) {
+      const option = document.createElement('option');
+      option.value = descuento.codigo;
+      datalist.appendChild(option);
+    }
+  });
+}
+
 // Ejecutar migración al cargar la página
 document.addEventListener('DOMContentLoaded', function() {
   migrarDescuentos();
   inicializarDescuentos();
+  llenarDatalistCodigos(); // Llenar datalist inicialmente
   document.getElementById('filtro-orden')?.addEventListener('change', cargarListaDescuentos);
   document.getElementById('btn-aplicar-descuento')?.addEventListener('click', aplicarDescuento);
 });
@@ -280,98 +300,96 @@ function manejarFormularioDescuento() {
 }
 
 // Función para calcular total con descuento
-function calcularTotalConDescuento() {
-  const pedido = window.pedidoActual;
-  let total = 0;
+function calcularTotalConDescuento(pedido) {
+  // Validación inicial del pedido
+  if (!pedido || typeof pedido !== 'object' || !pedido.items || !Array.isArray(pedido.items)) {
+    return {
+      total: 0,
+      descuento: 0,
+      subtotal: 0,
+      mensaje: 'Pedido inválido: estructura incorrecta'
+    };
+  }
+
+  // Calcular total sin descuento
+  const total = pedido.items.reduce((sum, item) => {
+    return sum + (item.precio || 0) * (item.cantidad || 1);
+  }, 0);
+
+  // Si no hay descuento, retornar valores base
+  if (!pedido.descuento || typeof pedido.descuento !== 'object') {
+    return {
+      total: total,
+      descuento: 0,
+      subtotal: total,
+      mensaje: ''
+    };
+  }
+
+  const descuento = pedido.descuento;
   let totalDescuento = 0;
   let descuentoInfo = '';
 
-  // Calcular total sin descuento (incluyendo combos)
-  pedido.items.forEach(item => {
-    total += item.precio * item.cantidad;
-  });
-
-  // Verificar si hay combos en el pedido
+  // Verificar combos
   const contieneCombos = pedido.items.some(item => item.esCombo === true);
   const soloCombos = pedido.items.every(item => item.esCombo === true);
 
-  // Aplicar descuento si existe
-  if (pedido.descuento) {
-    const descuento = pedido.descuento;
-
-    // Si el pedido contiene solo combos, no aplicar descuento
-    if (soloCombos) {
-      return {
-        total: total,
-        descuento: 0,
-        subtotal: total,
-        mensaje: 'Los descuentos no se pueden aplicar a pedidos que contienen solo combos.'
-      };
-    }
-
-    let subtotalAplicable = 0;
-    let itemsConDescuento = [];
-
-    // Identificar productos aplicables (excluyendo combos)
-    pedido.items.forEach(item => {
-      if (item.esCombo !== true) { // Asegurarse de que esCombo sea explícitamente false o undefined
-        const categoria = encontrarCategoriaProducto(item.id);
-        if (!descuento.categorias || (categoria && descuento.categorias.includes(categoria))) {
-          subtotalAplicable += item.precio * item.cantidad;
-          itemsConDescuento.push({
-            ...item,
-            categoria
-          });
-        }
-      }
-    });
-
-    // Calcular monto del descuento solo sobre el subtotal aplicable
-    if (subtotalAplicable > 0) {
-      if (descuento.tipo === 'porcentaje') {
-        totalDescuento = subtotalAplicable * (descuento.valor / 100);
-      } else {
-        totalDescuento = Math.min(descuento.valor, subtotalAplicable);
-      }
-
-      // Preparar información del descuento
-      const categoriasAplicadas = descuento.categorias ?
-        descuento.categorias.join(', ') : 'todos los productos (excepto combos)';
-
-      descuentoInfo = `Descuento aplicado (${descuento.codigo}): -$${totalDescuento.toFixed(2)} (${descuento.tipo === 'porcentaje' ? descuento.valor + '%' : 'fijo'} en ${categoriasAplicadas})`;
-      if (contieneCombos) {
-        descuentoInfo += ' (no aplicado a combos)';
-      }
-    } else {
-      // Si no hay ítems aplicables, no aplicar descuento
-      return {
-        total: total,
-        descuento: 0,
-        subtotal: total,
-        mensaje: 'No hay productos aplicables para el descuento.'
-      };
-    }
+  // No aplicar descuento si solo hay combos
+  if (soloCombos) {
+    return {
+      total: total,
+      descuento: 0,
+      subtotal: total,
+      mensaje: 'Los descuentos no se aplican a pedidos con solo combos.'
+    };
   }
 
-  // Calcular el total final restando el descuento del total original
-  const totalFinal = total - totalDescuento;
-
-  // Actualizar UI
-  const descuentoAplicadoElement = document.getElementById('descuento-aplicado');
-  if (descuentoAplicadoElement) {
-    if (descuentoInfo) {
-      descuentoAplicadoElement.innerHTML = descuentoInfo;
-      descuentoAplicadoElement.className = 'descuento-exitoso';
-    } else {
-      descuentoAplicadoElement.textContent = '';
-      descuentoAplicadoElement.className = '';
+  // Calcular subtotal aplicable (excluyendo combos)
+  const { subtotalAplicable, itemsConDescuento } = pedido.items.reduce((acc, item) => {
+    if (!item.esCombo) {
+      const categoria = encontrarCategoriaProducto(item.id); // Asegúrate de que esta función exista
+      if (!descuento.categorias || (categoria && descuento.categorias.includes(categoria))) {
+        acc.subtotalAplicable += (item.precio || 0) * (item.cantidad || 1);
+        acc.itemsConDescuento.push(item);
+      }
     }
+    return acc;
+  }, { subtotalAplicable: 0, itemsConDescuento: [] });
+
+  // Aplicar descuento si hay ítems aplicables
+  if (subtotalAplicable > 0) {
+    if (descuento.tipo === 'porcentaje') {
+      totalDescuento = subtotalAplicable * (descuento.valor / 100);
+    } else if (descuento.tipo === 'fijo') {
+      totalDescuento = Math.min(descuento.valor, subtotalAplicable);
+    }
+
+    // Construir mensaje informativo
+    const categoriasAplicadas = descuento.categorias 
+      ? descuento.categorias.join(', ') 
+      : 'todos los productos (excepto combos)';
+    
+    descuentoInfo = `Descuento aplicado (${descuento.codigo || 'sin código'}): -$${totalDescuento.toFixed(2)} ` +
+                    `(${descuento.tipo === 'porcentaje' ? descuento.valor + '%' : 'fijo'} en ${categoriasAplicadas})`;
+    
+    if (contieneCombos) {
+      descuentoInfo += ' (no aplicado a combos)';
+    }
+  } else {
+    return {
+      total: total,
+      descuento: 0,
+      subtotal: total,
+      mensaje: 'No hay productos aplicables para el descuento.'
+    };
   }
 
+  // Retornar resultados (sin manipular el DOM)
   return {
-    total: totalFinal,
+    total: total - totalDescuento,
     descuento: totalDescuento,
-    subtotal: total
+    subtotal: total,
+    mensaje: descuentoInfo
   };
 }
 

@@ -194,12 +194,23 @@ function construirMensajeWhatsApp(pedido, esModificacion) {
     mensaje += `🚚 Envío: ${costoEnvio > 0 ? `$${costoEnvio.toFixed(2)}` : 'Gratis'}\n`;
     mensaje += `💵 Total: $${pedido.total.toFixed(2)}\n\n`;
 
-    mensaje += ` Métodos de pago:\n`;
-    mensaje += `*Efectivo*💰, *Transferencia*🏦,*Tarjetas*💳\n\n`;
+    mensaje += `💳 Métodos de pago:\n`;
+    mensaje += `*Efectivo*💰, *Transferencia*🏦, *Tarjetas*💳\n\n`;
 
     // Añadir entrega programada si existe
-    if (pedido.entregaProgramada) {
-        mensaje += `📅 Entrega Programada: ${pedido.entregaProgramada.fecha} a las ${pedido.entregaProgramada.hora}\n\n`;
+    if (pedido.entregaProgramada && pedido.entregaProgramada.fecha) {
+        // Formatear la fecha a DD/MM/YYYY
+        const fecha = new Date(pedido.entregaProgramada.fecha);
+        const dia = fecha.getDate().toString().padStart(2, '0');
+        const mes = (fecha.getMonth() + 1).toString().padStart(2, '0');
+        const anio = fecha.getFullYear();
+        const fechaFormateada = `${dia}/${mes}/${anio}`;
+
+        if (pedido.entregaProgramada.hora) {
+            mensaje += `📅 Entrega Programada: ${fechaFormateada} a las ${pedido.entregaProgramada.hora}\n\n`;
+        } else {
+            mensaje += `📅 Entrega Programada: ${fechaFormateada}\n\n`;
+        }
     }
 
     if (pedido.notas) {

@@ -71,8 +71,6 @@ window.addEventListener('beforeinstallprompt', (e) => {
   });
 });
 
-
-
 document.addEventListener('DOMContentLoaded', function () {
   // Inicializar la aplicación
   initApp();
@@ -105,31 +103,36 @@ function initApp() {
 
 
 function generarNuevoPedido() {
-    const ahora = new Date();
-    const mes = (ahora.getMonth() + 1).toString().padStart(2, '0');
-    const año = ahora.getFullYear().toString().slice(-2);
+  const ahora = new Date();
+  const mes = (ahora.getMonth() + 1).toString().padStart(2, '0');
+  const año = ahora.getFullYear().toString().slice(-2);
 
-    const codigo = generarCodigoUnico(mes, año);
-    document.getElementById('pedido-codigo').textContent = codigo;
+  const codigo = generarCodigoUnico(mes, año);
+  document.getElementById('pedido-codigo').textContent = codigo;
 
-    window.pedidoActual = {
-        codigo: codigo,
-        fecha: ahora.toISOString(),
-        items: [],
-        descuento: null,
-        costoEnvio: 0,
-        total: 0,
-        subtotal: 0,
-        notas: '',
-        estado: ESTADOS.EN_PROCESO  // Estado inicial cambiado a "en_proceso"
-    };
+  window.pedidoActual = {
+    codigo: codigo,
+    fecha: ahora.toISOString(),
+    items: [],
+    descuento: null,
+    costoEnvio: 0,
+    total: 0,
+    subtotal: 0,
+    notas: '',
+    entregaProgramada: null, // Inicializar como null
+    estado: ESTADOS.EN_PROCESO
+  };
 
-    // Resetear UI
-    document.querySelectorAll('.btn-envio').forEach(btn => btn.classList.remove('active'));
-    document.querySelector('.btn-envio[data-monto="0"]').classList.add('active');
-    document.getElementById('pedido-notas-input').value = '';
-    document.getElementById('codigo-descuento').value = '';
-    document.getElementById('descuento-aplicado').textContent = '';
+  // Resetear UI
+  document.querySelectorAll('.btn-envio').forEach(btn => btn.classList.remove('active'));
+  document.querySelector('.btn-envio[data-monto="0"]').classList.add('active');
+  document.getElementById('pedido-notas-input').value = '';
+  document.getElementById('codigo-descuento').value = '';
+  document.getElementById('descuento-aplicado').textContent = '';
+  document.getElementById('entrega-programada-checkbox').checked = false;
+  document.getElementById('entrega-programada-campos').style.display = 'none';
+  document.getElementById('fecha-entrega').value = '';
+  document.getElementById('hora-entrega').value = '';
 }
 
 function generarCodigoUnico(mes, año) {
@@ -336,6 +339,27 @@ function actualizarPedidoUI() {
   subtotalElement.textContent = `$${window.pedidoActual.subtotal.toFixed(2)}`;
   envioMontoElement.textContent = `$${costoEnvio.toFixed(2)}`;
   totalElement.textContent = `$${window.pedidoActual.total.toFixed(2)}`;
+
+  // Actualizar notas
+  document.getElementById('pedido-notas-input').value = window.pedidoActual.notas || '';
+
+  // Actualizar entrega programada
+  const entregaCheckbox = document.getElementById('entrega-programada-checkbox');
+  const entregaCampos = document.getElementById('entrega-programada-campos');
+  const fechaEntrega = document.getElementById('fecha-entrega');
+  const horaEntrega = document.getElementById('hora-entrega');
+
+  if (window.pedidoActual.entregaProgramada) {
+    entregaCheckbox.checked = true;
+    entregaCampos.style.display = 'block';
+    fechaEntrega.value = window.pedidoActual.entregaProgramada.fecha || '';
+    horaEntrega.value = window.pedidoActual.entregaProgramada.hora || '';
+  } else {
+    entregaCheckbox.checked = false;
+    entregaCampos.style.display = 'none';
+    fechaEntrega.value = '';
+    horaEntrega.value = '';
+  }
 
   // Guardar automáticamente
   guardarPedidoActual();
@@ -599,6 +623,93 @@ function setupEventListeners() {
     });
   });
 
+  // Evento para el campo de notas
+    const notasInput = document.getElementById('pedido-notas-input');
+    notasInput.addEventListener('input', function () {
+      window.pedidoActual.notas = this.value;
+      guardarPedidoActual(); // Guardar automáticamente los cambios
+      if (window.pedidoEnEdicion) {
+        registrarCambioPedido({
+          tipo: 'notas_modificadas',
+          valorAnterior: window.pedidoEnEdicion.datosEditados.notas || '',
+          valorNuevo: this.value
+        });
+      }
+    });
+
+    // Evento para el checkbox de entrega programada
+    const entregaCheckbox = document.getElementById('entrega-programada-checkbox');
+    const entregaCampos = document.getElementById('entrega-programada-campos');
+    entregaCheckbox.addEventListener('change', function () {
+      entregaCampos.style.display = this.checked ? 'block' : 'none';
+      if (!this.checked) {
+        // Limpiar los campos y el objeto si se desmarca
+        document.getElementById('fecha-entrega').value = '';
+        document.getElementById('hora-entrega').value = '';
+        delete window.pedidoActual.entregaProgramada;
+      } else {
+        // Inicializar entregaProgramada si no existe
+        window.pedidoActual.entregaProgramada = window.pedidoActual.entregaProgramada || {};
+      }
+      guardarPedidoActual();
+      if (window.pedidoEnEdicion) {
+        registrarCambioPedido({
+          tipo: 'entrega_programada_modificada',
+          valorAnterior: window.pedidoEnEdicion.datosEditados.entregaProgramada ? 'activada' : 'desactivada',
+          valorNuevo: this.checked ? 'activada' : 'desactivada'
+        });
+      }
+    });
+
+    // Eventos para los campos de fecha y hora
+    const fechaEntrega = document.getElementById('fecha-entrega');
+    const horaEntrega = document.getElementById('hora-entrega');
+
+    fechaEntrega.addEventListener('change', function () {
+      window.pedidoActual.entregaProgramada = window.pedidoActual.entregaProgramada || {};
+      window.pedidoActual.entregaProgramada.fecha = this.value;
+      guardarPedidoActual();
+      if (window.pedidoEnEdicion) {
+        registrarCambioPedido({
+          tipo: 'fecha_entrega_modificada',
+          valorAnterior: window.pedidoEnEdicion.datosEditados.entregaProgramada?.fecha || '',
+          valorNuevo: this.value
+        });
+      }
+    });
+
+    horaEntrega.addEventListener('change', function () {
+      window.pedidoActual.entregaProgramada = window.pedidoActual.entregaProgramada || {};
+      window.pedidoActual.entregaProgramada.hora = this.value;
+      guardarPedidoActual();
+      if (window.pedidoEnEdicion) {
+        registrarCambioPedido({
+          tipo: 'hora_entrega_modificada',
+          valorAnterior: window.pedidoEnEdicion.datosEditados.entregaProgramada?.hora || '',
+          valorNuevo: this.value
+        });
+      }
+    });
+
+    //validaciones de las fechas
+    fechaEntrega.addEventListener('change', function () {
+  const today = new Date().toISOString().split('T')[0];
+  if (this.value < today) {
+    mostrarNotificacion('No puedes seleccionar una fecha anterior a hoy', 'warning');
+    this.value = today;
+  }
+  window.pedidoActual.entregaProgramada = window.pedidoActual.entregaProgramada || {};
+  window.pedidoActual.entregaProgramada.fecha = this.value;
+  guardarPedidoActual();
+  if (window.pedidoEnEdicion) {
+    registrarCambioPedido({
+      tipo: 'fecha_entrega_modificada',
+      valorAnterior: window.pedidoEnEdicion.datosEditados.entregaProgramada?.fecha || '',
+      valorNuevo: this.value
+    });
+  }
+});
+
   // Evento de pedido especial
   document.querySelector('.especial-btn').addEventListener('click', mostrarModalPedidoEspecial);
 
@@ -691,6 +802,24 @@ function mostrarVistaPrevia() {
         `;
   });
 
+  if (window.pedidoActual.notas) {
+    html += `<p><strong>Notas:</strong> ${window.pedidoActual.notas}</p>`;
+  }
+
+  // Agregar información de entrega programada
+  if (window.pedidoActual.entregaProgramada?.fecha && window.pedidoActual.entregaProgramada?.hora) {
+    html += `
+      <p><strong>Entrega Programada:</strong> ${window.pedidoActual.entregaProgramada.fecha} a las ${window.pedidoActual.entregaProgramada.hora}</p>
+    `;
+  } else if (window.pedidoActual.entregaProgramada?.fecha) {
+    html += `
+      <p><strong>Entrega Programada:</strong> ${window.pedidoActual.entregaProgramada.fecha}</p>
+    `;
+  }
+
+  content.innerHTML = html;
+  modal.style.display = 'flex';
+
   html += `
             </tbody>
             <tfoot>
@@ -741,6 +870,8 @@ function mostrarVistaPrevia() {
   if (window.pedidoActual.notas) {
     html += `<p><strong>Notas:</strong> ${window.pedidoActual.notas}</p>`;
   }
+
+
 
   content.innerHTML = html;
   modal.style.display = 'flex';

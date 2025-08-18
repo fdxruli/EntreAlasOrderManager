@@ -8,10 +8,8 @@
     <link rel="stylesheet" href="css/styles.css">
     <script src="libs/chart.js"></script>
     <script src="libs/date-fns.js"></script>
-    <link rel="manifest" href="/EntreAlasOrderManager/manifest.json">
-    <link rel="icon" type="image/png" href="/EntreAlasOrderManager/imagen-icono/logo-entrealas-192x192.png"
-        sizes="192x192">
-    <link rel="apple-touch-icon" href="/EntreAlasOrderManager/imagen-icono/logo-entrealas-192x192.png">
+    <link rel="icon" type="image/png" href="/EntreAlasOrderManager//imagen-icono/logo-entrealas-192x192.png" sizes="192x192">
+    <link rel="manifest" href="/EntreAlasOrderManager//manifest.json">
 </head>
 
 <body>
@@ -73,7 +71,7 @@
                         </label>
                         <div id="entrega-programada-campos" style="display: none;">
                             <label for="fecha-entrega">Fecha de entrega:</label>
-                            <input type="date" id="fecha-entrega" class="form-control">
+                            <input type="date" id="fecha-entrega" class="form-control" min="${new Date().toISOString().split('T')[0]}">
                             <label for="hora-entrega">Hora de entrega:</label>
                             <input type="time" id="hora-entrega" class="form-control">
                         </div>
@@ -85,9 +83,12 @@
                         <span>Subtotal:</span>
                         <span id="subtotal">$0.00</span>
                     </div>
+
                     <div class="descuento">
-                        <input type="text" id="codigo-descuento" placeholder="Código descuento">
+                        <input type="text" id="codigo-descuento" placeholder="Código descuento" list="codigos-vigentes">
+                        <datalist id="codigos-vigentes"></datalist>
                         <button id="aplicar-descuento">Aplicar</button>
+                        <!-- Nota: en tu JS usas 'btn-aplicar-descuento', así que ajusta el ID si es necesario -->
                         <span id="descuento-aplicado"></span>
                     </div>
 
@@ -656,6 +657,5 @@
     <script src="js/whatsapp.js"></script>
     <script src="js/app.js"></script>
 </body>
-
 
 </html>

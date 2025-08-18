@@ -623,147 +623,164 @@ function mostrarNotificacion(mensaje, tipo = 'info') {
 
 // Cálculos financieros centralizados
 function calcularMetricasFinancieras(pedidos, gastos, desde, hasta) {
-    const pedidosFiltrados = pedidos.filter(p => {
-        const fechaPedido = new Date(p.fecha).toISOString().split('T')[0];
-        return fechaPedido >= desde && fechaPedido <= hasta;
-    });
+  console.log('Calculando métricas desde:', desde, 'hasta:', hasta);
+  
+  // Filtrar pedidos por fecha
+  const pedidosFiltrados = pedidos.filter(p => {
+    if (!p.fecha) return false;
+    const fechaPedido = new Date(p.fecha).toISOString().split('T')[0];
+    const enRango = fechaPedido >= desde && fechaPedido <= hasta;
+    return enRango;
+  });
 
-    const gastosFiltrados = filtrarGastos(desde, hasta);
-    const retirosFiltrados = filtrarRetiros(desde, hasta);
-    const { topProductos, totalProductosVendidos, totalCostos, totalGanancias, margenGananciasGeneral, totalEnvios, gananciasEnvios } = calcularProductosConCostos(pedidosFiltrados, 10);
-    const totalVentas = pedidosFiltrados.reduce((sum, p) => sum + (p.total || 0), 0);
-    const totalPedidos = pedidosFiltrados.length;
-    const ticketPromedio = totalPedidos > 0 ? totalVentas / totalPedidos : 0;
-    const totalDescuentos = calcularTotalDescuentos(pedidosFiltrados);
-    const totalGastosExternos = gastosFiltrados
-        .filter(g => g.categoria === 'externo')
-        .reduce((sum, g) => sum + g.monto, 0);
-    const totalGastosInventario = gastosFiltrados
-        .filter(g => g.categoria === 'inventario')
-        .reduce((sum, g) => sum + g.monto, 0);
+  console.log(`Pedidos filtrados: ${pedidosFiltrados.length} de ${pedidos.length}`);
+
+  // Calcular productos y costos
+  const { 
+    topProductos, 
+    totalProductosVendidos, 
+    totalCostos, 
+    totalGanancias, 
+    margenGananciasGeneral, 
+    totalEnvios, 
+    gananciasEnvios 
+  } = calcularProductosConCostos(pedidosFiltrados, 10);
+
+  // Calcular métricas básicas
+  const totalVentas = pedidosFiltrados.reduce((sum, p) => sum + (p.total || 0), 0);
+  const totalPedidos = pedidosFiltrados.length;
+  const ticketPromedio = totalPedidos > 0 ? totalVentas / totalPedidos : 0;
+  const totalDescuentos = calcularTotalDescuentos(pedidosFiltrados);
+
+  // Filtrar gastos y retiros por fecha
+  const gastosFiltrados = filtrarGastos(desde, hasta);
+  const retirosFiltrados = filtrarRetiros(desde, hasta);
+
+  console.log('Gastos filtrados:', gastosFiltrados.length);
+  console.log('Retiros filtrados:', retirosFiltrados.length);
+
+  // Calcular gastos por categoría
+  const totalGastosExternos = gastosFiltrados
+    .filter(g => g.categoria === 'externo')
+    .reduce((sum, g) => sum + (g.monto || 0), 0);
     
-    // Calcular ingresos y retiros por separado
-    const totalRetiros = retirosFiltrados
-        .filter(r => (r.tipo === 'retiro' || !r.tipo) && !r.esAjusteCaja) // Excluir ajustes de caja
-        .reduce((sum, retiro) => sum + (retiro.monto || 0), 0);
-    const totalIngresos = retirosFiltrados
-        .filter(r => r.tipo === 'ingreso' && !r.esAjusteCaja) // Excluir ajustes de caja
-        .reduce((sum, retiro) => sum + (retiro.monto || 0), 0);
+  const totalGastosInventario = gastosFiltrados
+    .filter(g => g.categoria === 'inventario')
+    .reduce((sum, g) => sum + (g.monto || 0), 0);
 
-    // Calcular total de movimientos para dineroCaja (incluye ajustes)
-    const totalRetirosCaja = retirosFiltrados
-        .filter(r => r.tipo === 'retiro' || !r.tipo)
-        .reduce((sum, retiro) => sum + (retiro.monto || 0), 0);
-    const totalIngresosCaja = retirosFiltrados
-        .filter(r => r.tipo === 'ingreso')
-        .reduce((sum, retiro) => sum + (retiro.monto || 0), 0);
+  // Calcular retiros e ingresos
+  const totalRetiros = retirosFiltrados
+    .filter(r => (r.tipo === 'retiro' || !r.tipo) && !r.esAjusteCaja)
+    .reduce((sum, retiro) => sum + (retiro.monto || 0), 0);
+    
+  const totalIngresos = retirosFiltrados
+    .filter(r => r.tipo === 'ingreso' && !r.esAjusteCaja)
+    .reduce((sum, retiro) => sum + (retiro.monto || 0), 0);
 
-    // Calcular utilidad neta (sin ajustes de caja)
-    let utilidadNeta = totalGanancias + totalIngresos - totalGastosExternos - totalRetiros;
-    const excesoInventario = totalGastosInventario > totalCostos ? totalGastosInventario - totalCostos : 0;
-    utilidadNeta -= excesoInventario;
+  // Calcular retiros totales para dinero en caja (incluyendo ajustes)
+  const totalRetirosCaja = retirosFiltrados
+    .filter(r => r.tipo === 'retiro' || !r.tipo)
+    .reduce((sum, retiro) => sum + (retiro.monto || 0), 0);
+    
+  const totalIngresosCaja = retirosFiltrados
+    .filter(r => r.tipo === 'ingreso')
+    .reduce((sum, retiro) => sum + (retiro.monto || 0), 0);
 
-    // Calcular dinero en caja (con ajustes de caja)
-    const dineroCaja = totalVentas + totalIngresosCaja - totalGastosExternos - totalGastosInventario - totalRetirosCaja;
+  // Calcular utilidad neta y dinero en caja
+  const excesoInventario = totalGastosInventario > totalCostos ? totalGastosInventario - totalCostos : 0;
+  const utilidadNeta = totalGanancias + totalIngresos - totalGastosExternos - totalRetiros - excesoInventario;
+  const dineroCaja = totalVentas + totalIngresosCaja - totalGastosExternos - totalGastosInventario - totalRetirosCaja;
 
-    // Depuración
-    logDebug('Métricas financieras:', {
-        totalVentas,
-        totalGanancias,
-        totalGastosExternos,
-        totalGastosInventario,
-        totalRetiros,
-        totalIngresos,
-        totalRetirosCaja,
-        totalIngresosCaja,
-        excesoInventario,
-        utilidadNeta,
-        dineroCaja
-    });
+  const metricas = {
+    totalVentas,
+    totalPedidos,
+    ticketPromedio,
+    totalDescuentos,
+    topProductos,
+    totalProductosVendidos,
+    totalCostos,
+    totalGanancias,
+    margenGananciasGeneral,
+    totalGastosExternos,
+    totalGastosInventario,
+    utilidadNeta,
+    dineroCaja,
+    excesoInventario,
+    totalEnvios,
+    gananciasEnvios,
+    totalRetiros,
+    totalIngresos
+  };
 
-    return {
-        totalVentas,
-        totalPedidos,
-        ticketPromedio,
-        totalDescuentos,
-        topProductos,
-        totalProductosVendidos,
-        totalCostos,
-        totalGanancias,
-        margenGananciasGeneral,
-        totalGastosExternos,
-        totalGastosInventario,
-        utilidadNeta,
-        dineroCaja,
-        excesoInventario,
-        totalEnvios,
-        gananciasEnvios,
-        totalRetiros,
-        totalIngresos
-    };
+  console.log('Métricas calculadas:', metricas);
+  return metricas;
 }
 
 // Dashboard
 function actualizarDashboard() {
-    try {
-        // Limpiar caché para forzar recálculo
-        cachedPedidos = null;
-        cachedGastos = null;
+  try {
+    // Limpiar caché para forzar recálculo
+    cachedPedidos = null;
+    cachedGastos = null;
 
-        const desde = obtenerElemento(IDS.FILTRO_DESDE)?.value;
-        const hasta = obtenerElemento(IDS.FILTRO_HASTA)?.value;
-        const pedidos = obtenerPedidos();
-        const gastos = obtenerGastos();
-        const metricas = calcularMetricasFinancieras(pedidos, gastos, desde, hasta);
+    const desde = obtenerElemento(IDS.FILTRO_DESDE)?.value;
+    const hasta = obtenerElemento(IDS.FILTRO_HASTA)?.value;
+    
+    console.log('Fechas de filtro:', { desde, hasta });
+    
+    const pedidos = obtenerPedidos();
+    const gastos = obtenerGastos();
+    const metricas = calcularMetricasFinancieras(pedidos, gastos, desde, hasta);
 
-        // Actualizar elementos de la UI
-        const utilidadNetaElement = obtenerElemento('utilidad-neta');
-        const dineroCajaElement = obtenerElemento('dinero-caja');
-        const totalVentasElement = obtenerElemento('total-ventas');
-        const totalPedidosElement = obtenerElemento('total-pedidos');
-        const ticketPromedioElement = obtenerElemento('ticket-promedio');
-        const totalDescuentosElement = obtenerElemento('total-descuentos');
-        const totalGastosExternosElement = obtenerElemento('total-gastos-externos');
-        const totalGastosInventarioElement = obtenerElemento('total-gastos-inventario');
-        const totalRetirosElement = obtenerElemento('total-retiros');
+    console.log('Métricas calculadas:', metricas);
 
-        if (utilidadNetaElement) {
-            utilidadNetaElement.textContent = formatearMoneda(metricas.utilidadNeta);
-            utilidadNetaElement.className = metricas.utilidadNeta >= 0 ? 'metric-value positive' : 'metric-value negative';
-        }
-        if (dineroCajaElement) {
-            dineroCajaElement.textContent = formatearMoneda(metricas.dineroCaja);
-            dineroCajaElement.className = metricas.dineroCaja >= 0 ? 'metric-value positive' : 'metric-value negative';
-        }
-        if (totalVentasElement) totalVentasElement.textContent = formatearMoneda(metricas.totalVentas);
-        if (totalPedidosElement) totalPedidosElement.textContent = metricas.totalPedidos;
-        if (ticketPromedioElement) ticketPromedioElement.textContent = formatearMoneda(metricas.ticketPromedio);
-        if (totalDescuentosElement) totalDescuentosElement.textContent = formatearMoneda(metricas.totalDescuentos);
-        if (totalGastosExternosElement) totalGastosExternosElement.textContent = formatearMoneda(metricas.totalGastosExternos);
-        if (totalGastosInventarioElement) totalGastosInventarioElement.textContent = formatearMoneda(metricas.totalGastosInventario);
-        if (totalRetirosElement) totalRetirosElement.textContent = formatearMoneda(metricas.totalRetiros);
+    // Actualizar TODAS las métricas principales
+    actualizarElementoMetrica('total-ventas', formatearMoneda(metricas.totalVentas));
+    actualizarElementoMetrica('utilidad-neta', formatearMoneda(metricas.utilidadNeta), metricas.utilidadNeta >= 0 ? 'metric-value positive' : 'metric-value negative');
+    actualizarElementoMetrica('dinero-caja', formatearMoneda(metricas.dineroCaja), metricas.dineroCaja >= 0 ? 'metric-value positive' : 'metric-value negative');
+    actualizarElementoMetrica('total-pedidos', metricas.totalPedidos.toLocaleString());
+    actualizarElementoMetrica('ticket-promedio', formatearMoneda(metricas.ticketPromedio));
 
-        // Actualizar gráficos
-        actualizarGraficoVentas(pedidos, desde, hasta);
-        actualizarGraficoPie(metricas.topProductos);
-        
-        // Actualizar tablas
-        actualizarTablaProductos(metricas.topProductos, metricas.totalVentas);
-        actualizarTablaGastos();
-        actualizarTablaRetiros();
+    // Actualizar métricas secundarias
+    actualizarElementoMetrica('total-ganancias', formatearMoneda(metricas.totalGanancias));
+    actualizarElementoMetrica('total-gastos-inventario', formatearMoneda(metricas.totalGastosInventario));
+    actualizarElementoMetrica('total-costos', formatearMoneda(metricas.totalCostos));
+    actualizarElementoMetrica('total-gastos-externos', formatearMoneda(metricas.totalGastosExternos));
+    actualizarElementoMetrica('total-retiros', formatearMoneda(metricas.totalRetiros));
+    actualizarElementoMetrica('total-envios', formatearMoneda(metricas.totalEnvios));
+    actualizarElementoMetrica('ganancias-envios', formatearMoneda(metricas.gananciasEnvios));
+    actualizarElementoMetrica('margen-ganancias', `${metricas.margenGananciasGeneral.toFixed(1)}%`);
+    actualizarElementoMetrica('total-descuentos', formatearMoneda(metricas.totalDescuentos));
+    actualizarElementoMetrica('total-productos-vendidos', `${metricas.totalProductosVendidos.toLocaleString()}`);
 
-        // Actualizar otras vistas (gráficos, tablas, etc.)
-        actualizarTablaGastos();
-        actualizarTablaRetiros();
-        actualizarResumenGastos();
-        actualizarUIMetas();
-        actualizarBotonRetiroUtilidadNeta();
+    // Actualizar gráficos
+    actualizarGraficoVentas(pedidos, desde, hasta);
+    actualizarGraficoPie(metricas.topProductos);
 
-        console.log('Dashboard actualizado con métricas:', metricas);
-    } catch (error) {
-        logDebug('Error al actualizar dashboard:', error);
-        mostrarNotificacion('Error al actualizar el dashboard', 'error');
-    }
+    // Actualizar tablas
+    actualizarTablaProductos(metricas.topProductos, metricas.totalVentas);
+    actualizarTablaGastos();
+    actualizarTablaRetiros();
+    actualizarResumenGastos();
+    actualizarUIMetas();
+    actualizarBotonRetiroUtilidadNeta();
+
+    console.log('Dashboard actualizado exitosamente');
+  } catch (error) {
+    logDebug('Error al actualizar dashboard:', error);
+    mostrarNotificacion('Error al actualizar el dashboard: ' + error.message, 'error');
+  }
+}
+
+function actualizarElementoMetrica(id, valor, className = 'metric-value') {
+  const elemento = obtenerElemento(id);
+  if (elemento) {
+    elemento.textContent = valor;
+    elemento.className = className;
+    console.log(`Actualizado ${id}:`, valor);
+  } else {
+    console.warn(`Elemento no encontrado: ${id}`);
+  }
 }
 
 function actualizarElementosUIConCostos(
@@ -1959,14 +1976,21 @@ function alternarTipoGrafico() {
 }
 
 function calcularTotalDescuentos(pedidos) {
+  if (!Array.isArray(pedidos)) {
+    console.error('Error: pedidos debe ser un array');
+    return 0;
+  }
+
   return pedidos.reduce((sum, pedido) => {
     if (!pedido || typeof pedido !== 'object' || !pedido.items || !Array.isArray(pedido.items)) {
-      logDebug('Pedido inválido o sin items:', pedido);
+      console.warn('Pedido inválido o sin items:', pedido);
       return sum;
     }
+    
     if (!pedido.descuento) return sum;
+
     const resultadoDescuento = calcularTotalConDescuento(pedido);
-    return sum + resultadoDescuento.descuento;
+    return sum + (resultadoDescuento.descuento || 0);
   }, 0);
 }
 
@@ -2342,4 +2366,36 @@ function ajustarCaja(event) {
     }
 
     mostrarNotificacion(`Caja ajustada a ${formatearMoneda(montoCaja)}. ${diferencia > 0 ? 'Ingreso' : 'Retiro'} de ${formatearMoneda(Math.abs(diferencia))} registrado.`, 'success');
+}
+
+function depurarDatos() {
+  const desde = obtenerElemento(IDS.FILTRO_DESDE)?.value;
+  const hasta = obtenerElemento(IDS.FILTRO_HASTA)?.value;
+  
+  console.log('=== DEPURACIÓN DE DATOS ===');
+  console.log('Rango de fechas:', { desde, hasta });
+  
+  const pedidos = obtenerPedidos();
+  const gastos = obtenerGastos();
+  const retiros = obtenerRetiros();
+  
+  console.log('Total pedidos en localStorage:', pedidos.length);
+  console.log('Total gastos en localStorage:', gastos.length);
+  console.log('Total retiros en localStorage:', retiros.length);
+  
+  const pedidosFiltrados = pedidos.filter(p => {
+    if (!p.fecha) return false;
+    const fechaPedido = new Date(p.fecha).toISOString().split('T')[0];
+    return fechaPedido >= desde && fechaPedido <= hasta;
+  });
+  
+  const gastosFiltrados = filtrarGastos(desde, hasta);
+  const retirosFiltrados = filtrarRetiros(desde, hasta);
+  
+  console.log('Pedidos filtrados:', pedidosFiltrados.length, pedidosFiltrados);
+  console.log('Gastos filtrados:', gastosFiltrados.length, gastosFiltrados);
+  console.log('Retiros filtrados:', retirosFiltrados.length, retirosFiltrados);
+  
+  const metricas = calcularMetricasFinancieras(pedidos, gastos, desde, hasta);
+  console.log('Métricas finales:', metricas);
 }

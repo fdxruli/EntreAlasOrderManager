@@ -796,13 +796,13 @@ function aplicarDescuento() {
     return;
   }
 
-  const { total, descuento: montoDescuento, subtotal, mensaje } = calcularTotalConDescuento();
+  const { total, descuento: montoDescuento, subtotal, mensaje } = calcularTotalConDescuento(window.pedidoActual);
 
-  // Si hay un mensaje de error desde calcularTotalConDescuento, mostrarlo
-  if (mensaje) {
-    mostrarErrorDescuento(mensaje, elementoMensaje);
-    return;
-  }
+  // Si no se aplicó ningún descuento, mostrar el mensaje y salir
+    if (montoDescuento <= 0) {
+        mostrarErrorDescuento(mensaje || 'No se pudo aplicar el descuento.', elementoMensaje);
+        return;
+    }
 
   // Obtener el pedido actual completo
   const pedidoActual = window.pedidoActual;

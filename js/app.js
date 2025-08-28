@@ -310,13 +310,8 @@ function actualizarPedidoUI() {
   const totalElement = document.getElementById('total');
   const envioMontoElement = document.getElementById('envio-monto');
 
-  // Calcular subtotal
-  window.pedidoActual.subtotal = window.pedidoActual.items.reduce((sum, item) => {
-    return sum + (item.precio * item.cantidad);
-  }, 0);
-
   // Calcular total con descuento usando la función del módulo de descuentos
-  const resultadoDescuento = calcularTotalConDescuento();
+  const resultadoDescuento = calcularTotalConDescuento(window.pedidoActual);
   window.pedidoActual.total = resultadoDescuento.total;
   window.pedidoActual.subtotal = resultadoDescuento.subtotal;
 
@@ -771,7 +766,7 @@ function mostrarVistaPrevia() {
   const esModificacion = !!window.pedidoEnEdicion;
 
   // Calcular el descuento usando la función del módulo de descuentos
-  const resultadoDescuento = calcularTotalConDescuento();
+  const resultadoDescuento = calcularTotalConDescuento(window.pedidoActual);
   const descuentoMonto = resultadoDescuento.descuento;
   const contieneCombos = window.pedidoActual.items.some(item => item.esCombo === true);
   const soloCombos = window.pedidoActual.items.every(item => item.esCombo === true);
@@ -780,7 +775,7 @@ function mostrarVistaPrevia() {
         <h3>Pedido #${window.pedidoActual.codigo}</h3>
         <p><strong>Fecha:</strong> ${new Date(window.pedidoActual.fecha).toLocaleString()}</p>
         ${esModificacion ? `<p><strong>Modificación:</strong> ${new Date().toLocaleString()}</p>` : ''}
-        
+
         <table class="vista-previa-table">
             <thead>
                 <tr>
@@ -1067,7 +1062,7 @@ function agregarNuevaCombinacion() {
         <option value="alitas">Alitas</option>
         <option value="boneless">Boneless</option>
       </select>
-      
+
       <select class="sabor">
         <option value="BBQ">BBQ</option>
         <option value="Mango Habanero">Mango Habanero</option>
@@ -1075,12 +1070,12 @@ function agregarNuevaCombinacion() {
         <option value="Queso Parmesano">Queso Parmesano</option>
         <option value="Estilo Brayan">Estilo Brayan</option>
       </select>
-      
+
       <div class="cantidad-container">
         <input type="number" class="cantidad" min="1" value="${tipoGramaje === 'gramos' ? '200' : '3'}" step="${tipoGramaje === 'gramos' ? '50' : '1'}">
         <span class="unidad">${tipoGramaje === 'gramos' ? 'g' : 'pz'}</span>
       </div>
-      
+
       <div class="precio-combinacion">$0.00</div>
       <button class="btn-eliminar-combo">Eliminar</button>
     </div>

@@ -127,6 +127,7 @@ function llenarDatalistCodigos() {
 document.addEventListener('DOMContentLoaded', function() {
   migrarDescuentos();
   inicializarDescuentos();
+  sincronizarPedidosConDescuentos();
   llenarDatalistCodigos(); // Llenar datalist inicialmente
   document.getElementById('filtro-orden')?.addEventListener('change', cargarListaDescuentos);
   document.getElementById('btn-aplicar-descuento')?.addEventListener('click', aplicarDescuento);
@@ -890,12 +891,3 @@ function validarDescuento(descuento) {
   }
 }
 
-// Inicialización al cargar la página
-document.addEventListener('DOMContentLoaded', function() {
-  inicializarDescuentos();
-  sincronizarPedidosConDescuentos();
-  
-  // Configurar eventos globales
-  document.getElementById('filtro-orden')?.addEventListener('change', cargarListaDescuentos);
-  document.getElementById('btn-aplicar-descuento')?.addEventListener('click', aplicarDescuento);
-});

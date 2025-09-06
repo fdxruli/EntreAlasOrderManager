@@ -598,7 +598,7 @@ function setupEventListeners() {
   document.getElementById('reiniciar-pedido').addEventListener('click', reiniciarPedido);
 
   // Evento de aplicar descuento
-  document.getElementById('aplicar-descuento').addEventListener('click', aplicarDescuento);
+  document.getElementById('btn-aplicar-descuento').addEventListener('click', aplicarDescuento);
 
   // Eventos de modales
   document.querySelectorAll('.close-modal').forEach(btn => {

@@ -4,30 +4,30 @@ async function enviarPedidoWhatsApp() {
         let esModificacion = false;
 
         // CORRECCIÓN: Mejorar la detección de modificación
-        if (window.pedidoEnEdicion && 
-            window.pedidoEnEdicion.datosEditados && 
+        if (window.pedidoEnEdicion &&
+            window.pedidoEnEdicion.datosEditados &&
             window.pedidoEnEdicion.codigoOriginal) {
-            
+
             pedido = window.pedidoEnEdicion.datosEditados;
             esModificacion = true;
-            
+
             console.log('🔄 Detectado pedido en modificación:', window.pedidoEnEdicion.codigoOriginal);
-            
+
             // Guardar cambios antes de enviar
             guardarCambiosPedido();
-            
+
         } else if (window.pedidoActual && window.pedidoActual.estado === 'modificado') {
             // NUEVA VERIFICACIÓN: Si el pedido actual tiene estado modificado
             pedido = window.pedidoActual;
             esModificacion = true;
-            
+
             console.log('🔄 Detectado pedido modificado desde pedidoActual:', pedido.codigo);
-            
+
         } else {
             // Es un pedido completamente nuevo
             pedido = window.pedidoActual;
             esModificacion = false;
-            
+
             console.log('🆕 Detectado pedido nuevo:', pedido?.codigo);
         }
 
@@ -59,7 +59,7 @@ async function enviarPedidoWhatsApp() {
 
         // Enviar por WhatsApp
         const url = `whatsapp://send?text=${encodeURIComponent(mensaje)}`;
-        window.open(url, '_blank') || 
+        window.open(url, '_blank') ||
             mostrarNotificacion('No se pudo abrir WhatsApp. Asegúrate de tener la aplicación instalada.', 'error', 3000);
 
         // CORRECCIÓN: No limpiar inmediatamente si es modificación
@@ -71,14 +71,14 @@ async function enviarPedidoWhatsApp() {
         } else {
             // Para modificaciones, solo mostrar notificación y limpiar el estado de edición
             mostrarNotificacion('Modificación enviada correctamente', 'success');
-            
+
             // Limpiar solo el estado de edición, no toda la interfaz
             window.pedidoEnEdicion = null;
-            
+
             // Restaurar botones a estado normal
             const btnEnviar = document.getElementById('enviar-whatsapp');
             const btnCancelar = document.getElementById('cancelar-pedido');
-            
+
             if (btnEnviar) btnEnviar.textContent = 'Enviar por WhatsApp';
             if (btnCancelar) btnCancelar.textContent = 'Cancelar Pedido';
         }
@@ -96,21 +96,21 @@ function esPedidoEnModificacion() {
     // Verificar múltiples condiciones para detectar modificación
     return !!(
         // Condición 1: Hay un pedido explícitamente en edición
-        (window.pedidoEnEdicion && 
-         window.pedidoEnEdicion.datosEditados && 
+        (window.pedidoEnEdicion &&
+         window.pedidoEnEdicion.datosEditados &&
          window.pedidoEnEdicion.codigoOriginal) ||
-        
+
         // Condición 2: El pedido actual tiene estado modificado
-        (window.pedidoActual && 
+        (window.pedidoActual &&
          window.pedidoActual.estado === 'modificado') ||
-        
+
         // Condición 3: El pedido actual tiene historial de cambios
-        (window.pedidoActual && 
-         window.pedidoActual.historial && 
+        (window.pedidoActual &&
+         window.pedidoActual.historial &&
          window.pedidoActual.historial.length > 0) ||
-         
+
         // Condición 4: El pedido actual tiene fecha de modificación
-        (window.pedidoActual && 
+        (window.pedidoActual &&
          window.pedidoActual.fechaModificacion)
     );
 }
@@ -121,7 +121,7 @@ function debugEstadoPedido() {
     console.log('- pedidoEnEdicion:', window.pedidoEnEdicion);
     console.log('- pedidoActual:', window.pedidoActual);
     console.log('- esPedidoEnModificacion():', esPedidoEnModificacion());
-    
+
     if (window.pedidoActual) {
         console.log('- Estado del pedido actual:', window.pedidoActual.estado);
         console.log('- Historial del pedido:', window.pedidoActual.historial);
@@ -146,7 +146,7 @@ async function mostrarConfirmacionEnvio(esModificacion) {
 function construirMensajeWhatsApp(pedido, esModificacion) {
     // CORRECCIÓN: Verificar nuevamente si es modificación
     const esRealmenteModificacion = esModificacion || esPedidoEnModificacion();
-    
+
     const tipoPedido = esRealmenteModificacion ? 'Actualización de Pedido' : 'Nuevo Pedido';
     let mensaje = `🛍️ ${tipoPedido} - Entre Alas 🛍️\n\n`;
 
@@ -174,7 +174,7 @@ function construirMensajeWhatsApp(pedido, esModificacion) {
             mensaje += `${emoji} ${item.cantidad}x ${item.nombre} - $${(item.precio * item.cantidad).toFixed(2)}\n\n`;
         }
     });
-    
+
     const resultadoDescuento = calcularTotalConDescuento();
     const descuentoMonto = resultadoDescuento.descuento;
     const contieneCombos = pedido.items.some(item => item.esCombo === true);
@@ -290,7 +290,7 @@ function limpiarInterfazPedido() {
     const subtotalEl = document.getElementById('subtotal');
     const totalEl = document.getElementById('total');
     const envioMontoEl = document.getElementById('envio-monto');
-    
+
     if (subtotalEl) subtotalEl.textContent = '$0.00';
     if (totalEl) totalEl.textContent = '$0.00';
     if (envioMontoEl) envioMontoEl.textContent = '$0.00';
@@ -304,7 +304,7 @@ function limpiarInterfazPedido() {
     const descuentoAplicadoEl = document.getElementById('descuento-aplicado');
     const codigoDescuentoEl = document.getElementById('codigo-descuento');
     const notasInputEl = document.getElementById('pedido-notas-input');
-    
+
     if (descuentoAplicadoEl) descuentoAplicadoEl.textContent = '';
     if (codigoDescuentoEl) codigoDescuentoEl.value = '';
     if (notasInputEl) notasInputEl.value = '';
@@ -315,8 +315,13 @@ function limpiarInterfazPedido() {
 
 function guardarPedidoCompleto(pedido, esModificacion) {
     // Marcar el estado del pedido
-    pedido.estado = esModificacion ? 'modificado' : 'en proceso';
+    pedido.estado = esModificacion ? 'modificado' : 'completado';
     pedido.fechaEnvio = new Date().toISOString();
+
+    // Si es un pedido nuevo que se está completando, añadir fecha de completado
+    if (!esModificacion) {
+        pedido.fechaCompletado = new Date().toISOString();
+    }
 
     // Guardar en el historial
     const todosPedidos = JSON.parse(localStorage.getItem('pedidos')) || [];
@@ -330,6 +335,11 @@ function guardarPedidoCompleto(pedido, esModificacion) {
     }
 
     localStorage.setItem('pedidos', JSON.stringify(todosPedidos));
+
+    // Notificar al dashboard sobre el nuevo pedido completado
+    if (!esModificacion && window.dashboardFunctions && window.dashboardFunctions.agregarNuevoPedido) {
+        window.dashboardFunctions.agregarNuevoPedido(pedido);
+    }
 
     // Si no es modificación, limpiar el último pedido
     if (!esModificacion) {
